@@ -1,0 +1,24 @@
+flowchart TD
+    A["User presses Submit"] --> B["POST /api/submissions"]
+    B --> C["Save submission<br/>status = QUEUED"]
+    C --> D["Add job to Redis queue"]
+    D --> E["API returns 202 + submission id"]
+    F["Worker picks the job"] --> G["status = RUNNING"]
+    G --> H["Start Docker container<br/>no network, memory + cpu limit"]
+    H --> I["Entrypoint script: one command per language<br/>java Main.java / python3 main.py / g++ then ./main"]
+    I -->|"exit 20, the code did not compile"| J["COMPILATION_ERROR"]
+    I -->|"the program started"| K["Run each test case"]
+    K --> L{"Output matches?"}
+    L -->|"no"| M["WRONG_ANSWER"]
+    L -->|"timeout"| N["TIME_LIMIT_EXCEEDED"]
+    L -->|"out of memory"| O["MEMORY_LIMIT_EXCEEDED"]
+    L -->|"crash"| P["RUNTIME_ERROR"]
+    L -->|"all pass"| Q["ACCEPTED"]
+    J --> S["Save verdict in MongoDB"]
+    M --> S
+    N --> S
+    O --> S
+    P --> S
+    Q --> S
+    S --> T["Publish status to Redis"]
+    T --> V["WebSocket pushes it to the browser"]

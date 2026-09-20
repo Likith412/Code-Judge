@@ -1,27 +1,34 @@
 import { useEffect, useState } from "react";
 
+import client from "./api/client";
 import "./App.css";
 
 function App() {
-   const [message, setMessage] = useState("");
+   const [health, setHealth] = useState(null);
+   const [error, setError] = useState(null);
 
    useEffect(() => {
-      const getMessage = async () => {
-         setMessage("Loading...");
-         try {
-            const response = await fetch("http://localhost:3000/");
-            const data = await response.json();
-            setMessage(data.message);
-         } catch (error) {
-            console.error("Error fetching message:", error);
-            setMessage("Error fetching message");
-         }
-      };
-
-      getMessage();
+      client
+         .get("/health")
+         .then((response) => setHealth(response.data))
+         .catch((err) => setError(err.message));
    }, []);
 
-   return <div>{message}</div>;
+   return (
+      <main className="page">
+         <div className="card">
+            <h1>Code Judge</h1>
+
+            {error && <p className="status error">{error}</p>}
+            {health && (
+               <p className={health.ok ? "status up" : "status down"}>
+                  ok: {String(health.ok)} · db: {health.db}
+               </p>
+            )}
+            {!error && !health && <p className="status">checking…</p>}
+         </div>
+      </main>
+   );
 }
 
 export default App;

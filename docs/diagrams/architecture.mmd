@@ -1,0 +1,13 @@
+flowchart TD
+    U["Browser<br/>React + Monaco"] -->|"REST + WebSocket"| API["Express API"]
+    API --> M[("MongoDB")]
+    API --> R[("Redis")]
+    R -->|"BullMQ queue"| W1["Worker 1"]
+    R -->|"BullMQ queue"| W2["Worker 2"]
+    W1 --> D1["Docker container"]
+    W2 --> D2["Docker container"]
+    W1 --> M
+    W2 --> M
+    W1 -->|"verdict event"| R
+    R -->|"pub/sub"| API
+    API -->|"live status"| U

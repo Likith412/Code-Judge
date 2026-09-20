@@ -1,0 +1,118 @@
+erDiagram
+    USERS ||--o{ SESSIONS : "has login sessions"
+    USERS ||--o{ AUTHTOKENS : "has one-time codes and links"
+    USERS ||--o{ SUBMISSIONS : "submits"
+    USERS ||--o{ PROBLEMS : "creates (setter/admin)"
+    USERS ||--o{ CONTESTS : "creates (admin)"
+    USERS ||--o{ CONTESTPARTICIPANTS : "joins contests"
+    USERS ||--o{ AUDITLOGS : "acts"
+
+    PROBLEMS ||--o{ TESTCASES : "has"
+    PROBLEMS ||--o{ SUBMISSIONS : "receives"
+    PROBLEMS }o--o{ TAGS : "labelled with"
+    PROBLEMS }o--o{ CONTESTS : "used in"
+
+    SUBMISSIONS ||--o{ SUBMISSIONRESULTS : "one row per test case"
+    TESTCASES ||--o{ SUBMISSIONRESULTS : "judged in"
+
+    CONTESTS ||--o{ CONTESTPARTICIPANTS : "has"
+    CONTESTS ||--o{ SUBMISSIONS : "scopes"
+
+    USERS {
+        ObjectId _id PK
+        string username UK
+        string email UK
+        string passwordHash
+        bool emailVerified
+        enum role
+        enum status
+        int tokenVersion
+        object stats
+        ObjectId_array solvedProblemIds
+    }
+    SESSIONS {
+        ObjectId _id PK
+        ObjectId userId FK
+        string familyId
+        string tokenHash UK
+        enum status
+        date expiresAt
+    }
+    AUTHTOKENS {
+        ObjectId _id PK
+        ObjectId userId FK
+        enum type
+        string tokenHash UK
+        date usedAt
+        date expiresAt
+    }
+    PROBLEMS {
+        ObjectId _id PK
+        string slug UK
+        string title
+        enum difficulty
+        string_array supportedLanguages
+        string_array tags
+        int timeLimitMs
+        int memoryLimitMb
+        bool isPublished
+        ObjectId createdBy FK
+    }
+    TESTCASES {
+        ObjectId _id PK
+        ObjectId problemId FK
+        int order
+        string input
+        string expectedOutput
+        bool isHidden
+    }
+    SUBMISSIONS {
+        ObjectId _id PK
+        ObjectId userId FK
+        ObjectId problemId FK
+        ObjectId contestId FK
+        enum language
+        string sourceCode
+        enum status
+        int runtimeMs
+        int memoryKb
+        int testCasesPassed
+        int totalTestCases
+        bool isSampleRun
+    }
+    SUBMISSIONRESULTS {
+        ObjectId _id PK
+        ObjectId submissionId FK
+        ObjectId testCaseId FK
+        enum status
+        int runtimeMs
+    }
+    TAGS {
+        ObjectId _id PK
+        string slug UK
+        string name
+        int problemCount
+    }
+    CONTESTS {
+        ObjectId _id PK
+        string slug UK
+        date startTime
+        date endTime
+        object_array problems
+        ObjectId createdBy FK
+    }
+    CONTESTPARTICIPANTS {
+        ObjectId _id PK
+        ObjectId contestId FK
+        ObjectId userId FK
+        int score
+        int penaltyMinutes
+        int rank
+    }
+    AUDITLOGS {
+        ObjectId _id PK
+        ObjectId actorId FK
+        string action
+        string targetType
+        ObjectId targetId
+    }

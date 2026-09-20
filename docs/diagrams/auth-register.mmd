@@ -1,0 +1,19 @@
+sequenceDiagram
+    autonumber
+    participant U as Browser
+    participant A as API
+    participant DB as MongoDB
+    participant M as Email
+
+    U->>A: POST /api/auth/register (username, email, password)
+    A->>A: check the body with Zod, check password strength
+    A->>DB: is the email or username already taken?
+    A->>A: hash the password with bcrypt
+    A->>DB: create user (emailVerified = false)
+    A->>DB: create authToken (EMAIL_VERIFY, only the hash)
+    A->>M: send the link .../verify?token=RAW
+    A-->>U: 201 "check your email"
+    U->>A: GET /api/auth/verify?token=RAW
+    A->>DB: find by SHA-256(RAW), not used, not expired
+    A->>DB: emailVerified = true, mark the token used
+    A-->>U: redirect to the login page

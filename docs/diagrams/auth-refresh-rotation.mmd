@@ -1,0 +1,20 @@
+sequenceDiagram
+    autonumber
+    participant U as Browser
+    participant A as API
+    participant DB as MongoDB
+
+    U->>A: POST /api/auth/refresh (cookie is sent by the browser)
+    A->>DB: find the session by SHA-256(cookie)
+
+    alt no session found
+        A-->>U: 401, clear the cookie
+    else session is already ROTATED (an old token came back)
+        A->>DB: revoke EVERY session with the same familyId
+        A->>DB: write auditLog REFRESH_REUSE_DETECTED
+        A-->>U: 401 "please log in again"
+    else session is ACTIVE and not expired
+        A->>A: make a new refresh token
+        A->>DB: old row becomes ROTATED, new row is ACTIVE, same familyId
+        A-->>U: 200 new accessToken + new refresh cookie
+    end

@@ -1,14 +1,25 @@
-const dotenv = require("dotenv");
+const { z } = require("zod");
 
-dotenv.config();
+// No default means required: the server must not start half configured.
+const schema = z.object({
+   NODE_ENV: z.enum(["development", "production"]).default("development"),
+   PORT: z.coerce.number().default(3000),
+   LOG_LEVEL: z.string().default("info"),
+   MONGO_URI: z.string().min(1),
+   ALLOWED_ORIGINS: z.string().min(1),
+});
 
-const PORT = Number(process.env.PORT) || 3000;
-const MONGO_URI =
-   process.env.MONGO_URI || "mongodb://localhost:27017/code-judge";
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+const result = schema.safeParse(process.env);
+
+if (!result.success) {
+   for (const issue of result.error.issues) {
+      console.error(`env ${issue.path.join(".")}: ${issue.message}`);
+   }
+   console.error("Copy .env.example to .env and fill it in.");
+   process.exit(1);
+}
 
 module.exports = {
-   PORT,
-   MONGO_URI,
-   FRONTEND_URL,
+   ...result.data,
+   ALLOWED_ORIGINS: result.data.ALLOWED_ORIGINS.split(",").map((o) => o.trim()),
 };

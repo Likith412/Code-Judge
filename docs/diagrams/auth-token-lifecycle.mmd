@@ -1,0 +1,15 @@
+flowchart TD
+    L["Login is complete"] --> S["Session row created<br/>status = ACTIVE"]
+    S --> AT["Access token<br/>JWT, 10 minutes, kept in memory"]
+    S --> RT["Refresh token<br/>random string, 14 days, httpOnly cookie"]
+    AT -->|"expires"| REF["POST /api/auth/refresh"]
+    RT --> REF
+    REF --> ROT["Old row becomes ROTATED<br/>new row becomes ACTIVE"]
+    ROT --> AT
+
+    OLD["An old refresh token is used again"] --> REUSE["Reuse detected"]
+    REUSE --> KILL["Revoke the whole family<br/>write an audit log"]
+
+    LOGOUT["Logout on this device"] --> REV["That session becomes REVOKED"]
+    ALL["Logout everywhere / password change / ban"] --> TV["Revoke all sessions<br/>tokenVersion + 1"]
+    TV --> DEAD["Every access token already handed out<br/>stops working at once"]
