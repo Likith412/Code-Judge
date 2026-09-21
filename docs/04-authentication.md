@@ -35,35 +35,35 @@ Email is still used, but only for two one-way things: the verification link when
 
 ## 2. The tokens
 
-| Piece | What it is | Where it is kept | How long it lasts |
-|-------|-----------|------------------|-------------------|
-| **Access token** | Signed JWT with the user id, role, and `tokenVersion` | React memory only, never `localStorage` | 10 minutes |
-| **Refresh token** | 32 random bytes. Not a JWT. | httpOnly cookie on the path `/api/auth` | 14 days, but replaced every time it is used |
-| **Session** | A row in `sessions` holding the SHA-256 of the current refresh token | MongoDB | Removed by a TTL index when it expires |
-| **Email links** | Verify email, reset password. Random, saved as a hash. | MongoDB `authTokens` | 24 h / 30 min |
+| Piece             | What it is                                                           | Where it is kept                        | How long it lasts                           |
+| ----------------- | -------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------- |
+| **Access token**  | Signed JWT with the user id, role, and `tokenVersion`                | React memory only, never `localStorage` | 10 minutes                                  |
+| **Refresh token** | 32 random bytes. Not a JWT.                                          | httpOnly cookie on the path `/api/auth` | 14 days, but replaced every time it is used |
+| **Session**       | A row in `sessions` holding the SHA-256 of the current refresh token | MongoDB                                 | Removed by a TTL index when it expires      |
+| **Email links**   | Verify email, reset password. Random, saved as a hash.               | MongoDB `authTokens`                    | 24 h / 30 min                               |
 
 ### Why not just one long JWT?
 
-| Problem with one long JWT | What we do instead |
-|---------------------------|--------------------|
-| You cannot cancel it. Ban a user and their token still works. | 10-minute access token + a `tokenVersion` number that kills every token at once |
+| Problem with one long JWT                                           | What we do instead                                                                                 |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| You cannot cancel it. Ban a user and their token still works.       | 10-minute access token + a `tokenVersion` number that kills every token at once                    |
 | Keeping it in `localStorage` means any injected script can read it. | Access token stays in memory. The refresh token is an httpOnly cookie that JavaScript cannot read. |
-| A stolen token works quietly until it expires. | The refresh token changes on every use, and using an old one kills the whole login |
-| "Log out everywhere" is not possible. | Sessions are rows in the database and can be deleted |
+| A stolen token works quietly until it expires.                      | The refresh token changes on every use, and using an old one kills the whole login                 |
+| "Log out everywhere" is not possible.                               | Sessions are rows in the database and can be deleted                                               |
 
 ### What is inside the access token
 
 ```json
 {
-  "sub": "6702a1f4c2a1b3d4e5f60001",
-  "role": "USER",
-  "tv": 3,
-  "sid": "6702c3aa11bb22cc33dd0001",
-  "typ": "access",
-  "iat": 1789543210,
-  "exp": 1789543810,
-  "iss": "code-judge",
-  "aud": "code-judge-web"
+   "sub": "6702a1f4c2a1b3d4e5f60001",
+   "role": "USER",
+   "tv": 3,
+   "sid": "6702c3aa11bb22cc33dd0001",
+   "typ": "access",
+   "iat": 1789543210,
+   "exp": 1789543810,
+   "iss": "code-judge",
+   "aud": "code-judge-web"
 }
 ```
 
@@ -108,7 +108,7 @@ Until the email is verified the user can browse problems but cannot submit code.
 Things that matter here:
 
 - If the email does not exist, still run `bcrypt.compare` against a dummy hash. Otherwise the reply time tells the attacker that the account exists.
-- The message is the same for a wrong email and a wrong password: *"email or password is wrong"*.
+- The message is the same for a wrong email and a wrong password: _"email or password is wrong"_.
 - Lockout: 5 wrong tries in 15 minutes locks the account for 15 minutes (`lockedUntil` on the user). There is also an IP limit of 20 login calls per 15 minutes.
 - Not verified yet → `403 EMAIL_NOT_VERIFIED`, with a button to send the mail again.
 - Every successful login writes a `sessions` row with browser, OS, and IP, which is what the device list uses.
@@ -135,14 +135,14 @@ This is the most interesting part of the design and the best thing to talk about
 
 ![Token lifecycle](diagrams/auth-token-lifecycle.svg)
 
-| Action | What happens |
-|--------|--------------|
-| Logout (this device) | This session becomes `REVOKED`, cookie cleared |
-| Logout everywhere | All sessions `REVOKED`, `tokenVersion` + 1 |
-| Password change or reset | Same as logout everywhere, and `passwordUpdatedAt` is set |
-| Reuse detected | Every session in that family `REVOKED`, audit log written |
-| Ban | `status = BANNED`, `tokenVersion` + 1, all sessions revoked |
-| Remove one device from the list | Only that session `REVOKED` |
+| Action                          | What happens                                                |
+| ------------------------------- | ----------------------------------------------------------- |
+| Logout (this device)            | This session becomes `REVOKED`, cookie cleared              |
+| Logout everywhere               | All sessions `REVOKED`, `tokenVersion` + 1                  |
+| Password change or reset        | Same as logout everywhere, and `passwordUpdatedAt` is set   |
+| Reuse detected                  | Every session in that family `REVOKED`, audit log written   |
+| Ban                             | `status = BANNED`, `tokenVersion` + 1, all sessions revoked |
+| Remove one device from the list | Only that session `REVOKED`                                 |
 
 An access token that is already out there keeps working for up to 10 more minutes — unless `tokenVersion` changed, which kills it right away. That is the trade: one cached database read per request in exchange for being able to cancel access instantly.
 
@@ -152,11 +152,11 @@ Small detail on "logout on this device": it kills the refresh token at once, but
 
 ## 7. Password change and reset
 
-| Flow | How it works |
-|------|--------------|
+| Flow                | How it works                                                                                                                                                                                                                            |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Change password** | `POST /api/auth/change-password` with the current password and the new one. The current password must be correct. On success: all sessions revoked, `tokenVersion` + 1, and the current device is logged in again with a fresh session. |
-| **Forgot password** | `POST /api/auth/forgot-password` with the email. The reply is always the same. If the account exists, a one-time link (30 minutes, hash saved only) goes out. |
-| **Reset password** | `POST /api/auth/reset-password` with the token and the new password. The token dies after one use. All sessions are revoked, `tokenVersion` + 1, and if the email was not verified yet, using the reset link verifies it. |
+| **Forgot password** | `POST /api/auth/forgot-password` with the email. The reply is always the same. If the account exists, a one-time link (30 minutes, hash saved only) goes out.                                                                           |
+| **Reset password**  | `POST /api/auth/reset-password` with the token and the new password. The token dies after one use. All sessions are revoked, `tokenVersion` + 1, and if the email was not verified yet, using the reset link verifies it.               |
 
 Sensitive actions — change password, delete account — always ask for the **current password** in the request body. A stolen access token alone is not enough to do lasting damage.
 
@@ -166,17 +166,17 @@ Sensitive actions — change password, delete account — always ask for the **c
 
 ## 8. Who can do what
 
-| Permission | USER | SETTER | ADMIN |
-|------------|:----:|:------:|:-----:|
-| read published problems | ✅ | ✅ | ✅ |
-| submit code (needs a verified email) | ✅ | ✅ | ✅ |
-| read own submissions | ✅ | ✅ | ✅ |
-| create / edit own problems | ❌ | ✅ | ✅ |
-| edit anyone's problem | ❌ | ❌ | ✅ |
-| manage test cases | ❌ | own problems | ✅ |
-| read any submission | ❌ | ❌ | ✅ |
-| change roles, ban users | ❌ | ❌ | ✅ |
-| create contests | ❌ | ❌ | ✅ |
+| Permission                           | USER |    SETTER    | ADMIN |
+| ------------------------------------ | :--: | :----------: | :---: |
+| read published problems              |  ✅  |      ✅      |  ✅   |
+| submit code (needs a verified email) |  ✅  |      ✅      |  ✅   |
+| read own submissions                 |  ✅  |      ✅      |  ✅   |
+| create / edit own problems           |  ❌  |      ✅      |  ✅   |
+| edit anyone's problem                |  ❌  |      ❌      |  ✅   |
+| manage test cases                    |  ❌  | own problems |  ✅   |
+| read any submission                  |  ❌  |      ❌      |  ✅   |
+| change roles, ban users              |  ❌  |      ❌      |  ✅   |
+| create contests                      |  ❌  |      ❌      |  ✅   |
 
 Middleware order on a protected route:
 
@@ -212,15 +212,15 @@ Set-Cookie: refresh_token=<random>;
 
 All counters live in Redis and expire by themselves.
 
-| Endpoint | Limit | Counted by |
-|----------|-------|------------|
-| `POST /auth/login` | 5 per 15 min | email + IP |
-| `POST /auth/register` | 3 per hour | IP |
-| `POST /auth/resend-verification` | 3 per hour | email + IP |
-| `POST /auth/forgot-password` | 3 per hour | email + IP |
-| `POST /auth/refresh` | 30 per 15 min | session id |
-| `POST /submissions` | 1 per 3 s, 30 per hour | user id |
-| everything else | 100 per 15 min | user id or IP |
+| Endpoint                         | Limit                  | Counted by    |
+| -------------------------------- | ---------------------- | ------------- |
+| `POST /auth/login`               | 5 per 15 min           | email + IP    |
+| `POST /auth/register`            | 3 per hour             | IP            |
+| `POST /auth/resend-verification` | 3 per hour             | email + IP    |
+| `POST /auth/forgot-password`     | 3 per hour             | email + IP    |
+| `POST /auth/refresh`             | 30 per 15 min          | session id    |
+| `POST /submissions`              | 1 per 3 s, 30 per hour | user id       |
+| everything else                  | 100 per 15 min         | user id or IP |
 
 Over the limit → `429` with a `Retry-After` header.
 
@@ -239,21 +239,21 @@ The worker is a program, not a person, so it must never use a user token.
 
 ## 12. Endpoints
 
-| Method | Path | Needs | What it does |
-|--------|------|-------|--------------|
-| POST | `/api/auth/register` | — | create the account, send the verification mail |
-| GET | `/api/auth/verify` | verify token | verify the email address |
-| POST | `/api/auth/resend-verification` | — | send the mail again (rate limited) |
-| POST | `/api/auth/login` | — | email + password |
-| POST | `/api/auth/refresh` | cookie | rotate and get a new access token |
-| POST | `/api/auth/logout` | cookie | log out this device |
-| POST | `/api/auth/logout-all` | access | log out everywhere |
-| GET | `/api/auth/me` | access | who am I |
-| GET | `/api/auth/sessions` | access | device list |
-| DELETE | `/api/auth/sessions/:id` | access | remove one device |
-| POST | `/api/auth/forgot-password` | — | send the reset mail |
-| POST | `/api/auth/reset-password` | reset token | set a new password |
-| POST | `/api/auth/change-password` | access + current password | change the password |
+| Method | Path                            | Needs                     | What it does                                   |
+| ------ | ------------------------------- | ------------------------- | ---------------------------------------------- |
+| POST   | `/api/auth/register`            | —                         | create the account, send the verification mail |
+| GET    | `/api/auth/verify`              | verify token              | verify the email address                       |
+| POST   | `/api/auth/resend-verification` | —                         | send the mail again (rate limited)             |
+| POST   | `/api/auth/login`               | —                         | email + password                               |
+| POST   | `/api/auth/refresh`             | cookie                    | rotate and get a new access token              |
+| POST   | `/api/auth/logout`              | cookie                    | log out this device                            |
+| POST   | `/api/auth/logout-all`          | access                    | log out everywhere                             |
+| GET    | `/api/auth/me`                  | access                    | who am I                                       |
+| GET    | `/api/auth/sessions`            | access                    | device list                                    |
+| DELETE | `/api/auth/sessions/:id`        | access                    | remove one device                              |
+| POST   | `/api/auth/forgot-password`     | —                         | send the reset mail                            |
+| POST   | `/api/auth/reset-password`      | reset token               | set a new password                             |
+| POST   | `/api/auth/change-password`     | access + current password | change the password                            |
 
 ---
 
@@ -282,18 +282,18 @@ In development, print the email to the console instead of sending it, or use Mai
 
 ## 14. What each defence stops
 
-| Attack | Defence |
-|--------|---------|
-| Password guessing | bcrypt cost 12, account lockout, rate limits, common-password check |
-| Someone reads the database | Only hashes are stored: password, refresh token, reset token |
-| XSS reading the token | Access token only in memory, refresh cookie is HttpOnly, CSP header |
-| CSRF | SameSite=Strict, cookie only on `/api/auth`, Origin check, no cookie auth on normal routes |
-| Stolen refresh token | Rotation plus reuse detection kills the whole family |
-| Token cannot be cancelled | `tokenVersion` + session rows + a 10-minute lifetime |
-| Finding out who has an account | Same reply and same timing on register and forgot-password |
-| Email spam through your server | Rate limits on the two mail endpoints and a daily cap per user |
-| Bot accounts flooding the judge | Code cannot be submitted until the email is verified |
-| Admin account taken over | Few admins, strong passwords, every admin action in the audit log |
+| Attack                          | Defence                                                                                    |
+| ------------------------------- | ------------------------------------------------------------------------------------------ |
+| Password guessing               | bcrypt cost 12, account lockout, rate limits, common-password check                        |
+| Someone reads the database      | Only hashes are stored: password, refresh token, reset token                               |
+| XSS reading the token           | Access token only in memory, refresh cookie is HttpOnly, CSP header                        |
+| CSRF                            | SameSite=Strict, cookie only on `/api/auth`, Origin check, no cookie auth on normal routes |
+| Stolen refresh token            | Rotation plus reuse detection kills the whole family                                       |
+| Token cannot be cancelled       | `tokenVersion` + session rows + a 10-minute lifetime                                       |
+| Finding out who has an account  | Same reply and same timing on register and forgot-password                                 |
+| Email spam through your server  | Rate limits on the two mail endpoints and a daily cap per user                             |
+| Bot accounts flooding the judge | Code cannot be submitted until the email is verified                                       |
+| Admin account taken over        | Few admins, strong passwords, every admin action in the audit log                          |
 
 **Known limits, said plainly:** there is no second factor, so a leaked or guessed password is enough to get in — that is the trade we chose for a simpler build. A stolen access token works for up to 10 minutes. There is no device fingerprinting and no impossible-travel check.
 

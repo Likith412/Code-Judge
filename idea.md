@@ -859,7 +859,7 @@ Backend
 /controllers
 /models
 /routes
-/middleware
+/middlewares
 /services
 server.js
 

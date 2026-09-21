@@ -5,9 +5,9 @@ const helmet = require("helmet");
 
 const { ALLOWED_ORIGINS } = require("./config/env");
 const logger = require("./config/logger");
-const requestId = require("./middleware/requestId");
-const notFound = require("./middleware/notFound");
-const errorHandler = require("./middleware/errorHandler");
+const requestId = require("./middlewares/requestId");
+const notFound = require("./middlewares/notFound");
+const errorHandler = require("./middlewares/errorHandler");
 const routes = require("./routes");
 
 const app = express();
