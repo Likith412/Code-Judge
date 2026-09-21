@@ -1,0 +1,40 @@
+# The stateful parts of the stack, for development.
+#
+#   docker compose up -d      start MongoDB
+#   docker compose down       stop it, keep the data
+#   docker compose down -v    stop it and throw the data away
+#
+# The API and the web app still run on the host with npm run dev. Phase 11
+# adds api, worker and web services to this file.
+
+services:
+   mongo:
+      image: mongo:8
+      container_name: code-judge-mongo
+      restart: unless-stopped
+      ports:
+         - "27017:27017"
+      volumes:
+         - mongo-data:/data/db
+      healthcheck:
+         test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+         interval: 10s
+         timeout: 5s
+         retries: 5
+   redis:
+      image: redis:8-alpine
+      container_name: code-judge-redis
+      restart: unless-stopped
+      ports:
+         - "6379:6379"
+      volumes:
+         - redis-data:/data
+      healthcheck:
+         test: ["CMD", "redis-cli", "ping"]
+         interval: 10s
+         timeout: 5s
+         retries: 5
+
+volumes:
+   mongo-data:
+   redis-data:

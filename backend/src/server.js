@@ -4,6 +4,7 @@ require("dotenv").config();
 
 const { PORT } = require("./config/env");
 const { connectDatabase, disconnectDatabase } = require("./config/db");
+const { verifyMailer } = require("./config/mailer");
 const logger = require("./config/logger");
 const app = require("./app");
 
@@ -15,6 +16,9 @@ async function startServer() {
    try {
       await connectDatabase();
       logger.info("Database connected");
+
+      // A broken mail setup should be a warning at startup, not a failed registration an hour later.
+      await verifyMailer();
 
       server = http.createServer(app);
 

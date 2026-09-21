@@ -7,6 +7,21 @@ const schema = z.object({
    LOG_LEVEL: z.string().default("info"),
    MONGO_URI: z.string().min(1),
    ALLOWED_ORIGINS: z.string().min(1),
+   WEB_URL: z.url(),
+
+   JWT_SECRET: z.string().min(32, "must be at least 32 characters"),
+   JWT_ISSUER: z.string().min(1),
+   JWT_AUDIENCE: z.string().min(1),
+   ACCESS_TOKEN_TTL: z.string().min(1),
+   REFRESH_TOKEN_TTL: z.string().min(1),
+
+   BCRYPT_ROUNDS: z.coerce.number().int().min(10).max(15),
+
+   // The only one allowed to be empty: on localhost the cookie has no domain.
+   COOKIE_DOMAIN: z.string().default(""),
+
+   SMTP_URL: z.string().min(1),
+   MAIL_FROM: z.string().min(1),
 });
 
 const result = schema.safeParse(process.env);
