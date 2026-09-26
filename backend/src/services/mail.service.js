@@ -1,6 +1,7 @@
 const { WEB_URL } = require("../config/env");
 const { sendMail } = require("../config/mailer");
 
+// Both emails are the same shape.
 const layout = (line, action, url) => ({
    text: `${line}\n\n${action}: ${url}\n\nIf you did not ask for this, ignore this email.`,
    html: `<p>${line}</p><p><a href="${url}">${action}</a></p><p style="color:#64748b;font-size:12px">If you did not ask for this, ignore this email.</p>`,

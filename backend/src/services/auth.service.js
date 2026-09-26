@@ -14,9 +14,7 @@ const { signAccessToken } = require("./token.service");
 const VERIFY_TTL_MS = toMs("24h");
 const RESET_TTL_MS = toMs("30m");
 
-// Compared against when the email does not exist, so a wrong address and a
-// wrong password take the same time to answer. Without it the reply time
-// tells an attacker which addresses are registered.
+// Keep login response times similar to prevent attackers from detecting registered emails.
 const DUMMY_HASH = bcrypt.hashSync("not-a-real-password", BCRYPT_ROUNDS);
 
 // Register and forgot-password say this whether or not the address is known.
@@ -24,9 +22,9 @@ const VAGUE_REPLY = {
    message: "If that address needs it, a link is on its way.",
 };
 
-const hashPassword = (plain) => bcrypt.hash(plain, BCRYPT_ROUNDS);
+/* ---- helpers, private to this file --------------------------------- */
 
-// ---------------------------------------------------------------- email links
+const hashPassword = (plain) => bcrypt.hash(plain, BCRYPT_ROUNDS);
 
 // Only the newest link works: asking for a second one kills the first.
 async function issueLink({ userId, type, ttlMs, ip }) {
@@ -44,9 +42,7 @@ async function issueLink({ userId, type, ttlMs, ip }) {
    return raw;
 }
 
-// An expired row is deleted by the TTL index within the minute, so an old
-// link can read as invalid rather than expired. Both dead ends offer the
-// same way forward, so the difference does not matter to the person.
+// TTL may delete expired links, so both missing and expired links are treated the same.
 async function consumeLink(raw, type) {
    const token = await AuthToken.findOne({ tokenHash: hashToken(raw), type });
 
@@ -66,24 +62,26 @@ async function consumeLink(raw, type) {
    return user;
 }
 
-async function sendVerificationLink(user, ip) {
-   const raw = await issueLink({
-      userId: user._id,
-      type: "EMAIL_VERIFY",
-      ttlMs: VERIFY_TTL_MS,
-      ip,
-   });
+// The three go together: a new hash is not a password change until every
+// session is gone and every access token already handed out is dead.
+async function applyNewPassword(user, password, reason) {
+   await User.updateOne(
+      { _id: user._id },
+      {
+         passwordHash: await hashPassword(password),
+         passwordUpdatedAt: new Date(),
+         $inc: { tokenVersion: 1 },
+      },
+   );
 
-   await mail.sendVerificationEmail({ to: user.email, token: raw });
+   await sessions.revokeAllForUser(user._id, reason);
 }
 
-// ------------------------------------------------------------------- register
+/* ---- endpoints: one per route, and all the controller calls -------- */
 
 async function register({ username, email, password, ip }) {
    const taken = await User.exists({ username });
 
-   // Usernames are public, so a clash is an ordinary field error. Addresses
-   // are not, so a clash there stays quiet.
    if (taken) {
       throw ApiError.validation("Invalid input", [
          { field: "username", issue: "That username is taken" },
@@ -108,13 +106,17 @@ async function register({ username, email, password, ip }) {
          passwordHash: await hashPassword(password),
       });
    } catch (err) {
-      // Two signups racing for the same username or address. The unique index
-      // is the real guard; the checks above only make the message nicer.
-      if (err.code === 11000) return VAGUE_REPLY;
       throw err;
    }
 
-   await sendVerificationLink(user, ip);
+   const raw = await issueLink({
+      userId: user._id,
+      type: "EMAIL_VERIFY",
+      ttlMs: VERIFY_TTL_MS,
+      ip,
+   });
+
+   await mail.sendVerificationEmail({ to: user.email, token: raw });
 
    return VAGUE_REPLY;
 }
@@ -123,7 +125,14 @@ async function resendVerification({ email, ip }) {
    const user = await User.findOne({ email });
 
    if (user && user.status === "ACTIVE" && !user.emailVerified) {
-      await sendVerificationLink(user, ip);
+      const raw = await issueLink({
+         userId: user._id,
+         type: "EMAIL_VERIFY",
+         ttlMs: VERIFY_TTL_MS,
+         ip,
+      });
+
+      await mail.sendVerificationEmail({ to: user.email, token: raw });
    }
 
    return VAGUE_REPLY;
@@ -140,11 +149,6 @@ async function verifyEmail({ token }) {
    return { status: "verified" };
 }
 
-// ---------------------------------------------------------------------- login
-
-// Nothing slows a guesser down except bcrypt: there is no lockout and no rate
-// limit yet. Every failed try is written to the audit log, so the pattern is
-// at least visible. Rate limits arrive with Redis in phase 6.
 async function login({ email, password, req }) {
    const user = await User.findOne({ email }).select("+passwordHash");
 
@@ -169,8 +173,7 @@ async function login({ email, password, req }) {
    if (user.status === "DELETED")
       throw new ApiError("INVALID_CREDENTIALS", "Email or password is wrong");
 
-   // The password was right, so this is an unfinished step rather than a
-   // failure. No session is created until the address is confirmed.
+   // Password is correct, but no session is created until the email is confirmed.
    if (!user.emailVerified) {
       throw new ApiError(
          "EMAIL_NOT_VERIFIED",
@@ -192,8 +195,6 @@ async function login({ email, password, req }) {
    };
 }
 
-// -------------------------------------------------------------------- refresh
-
 async function refresh({ token, req }) {
    if (!token) throw new ApiError("SESSION_INVALID", "No refresh token");
 
@@ -211,8 +212,7 @@ async function refresh({ token, req }) {
 
    let live = current;
 
-   // A spent token came back. Either two tabs refreshed at the same moment,
-   // or someone is replaying a stolen cookie. Only the first is forgiven.
+   // A reused token may be a race between tabs or a stolen-cookie replay; only the race is forgiven.
    if (current.status === "ROTATED") {
       const grace = await sessions.findGraceSession(hash, req);
 
@@ -275,8 +275,6 @@ async function refresh({ token, req }) {
    };
 }
 
-// --------------------------------------------------------------------- logout
-
 // One family is one login on one device, so the whole family goes.
 async function logout({ token }) {
    if (!token) return;
@@ -289,8 +287,7 @@ async function logout({ token }) {
 async function logoutAll(user) {
    await sessions.revokeAllForUser(user._id, "LOGOUT_ALL");
 
-   // Kills every access token already handed out, including the one used to
-   // make this call.
+   // Kills every access token already handed out, including the one used to make this call.
    await User.updateOne({ _id: user._id }, { $inc: { tokenVersion: 1 } });
 }
 
@@ -315,8 +312,6 @@ async function revokeSessionById(user, sessionId) {
    await sessions.revokeFamily(session.familyId, "LOGOUT");
 }
 
-// ------------------------------------------------------------------- password
-
 async function forgotPassword({ email, ip }) {
    const user = await User.findOne({ email });
 
@@ -334,28 +329,12 @@ async function forgotPassword({ email, ip }) {
    return VAGUE_REPLY;
 }
 
-// Everything that changes a password does the same three things: store the
-// new hash, end every session, and raise tokenVersion.
-async function applyNewPassword(user, password, reason) {
-   await User.updateOne(
-      { _id: user._id },
-      {
-         passwordHash: await hashPassword(password),
-         passwordUpdatedAt: new Date(),
-         $inc: { tokenVersion: 1 },
-      },
-   );
-
-   await sessions.revokeAllForUser(user._id, reason);
-}
-
 async function resetPassword({ token, password, req }) {
    const user = await consumeLink(token, "PASSWORD_RESET");
 
    await applyNewPassword(user, password, "PASSWORD_CHANGE");
 
-   // Reaching the inbox proves the address, so a forgotten password also
-   // finishes a signup that was never confirmed.
+   // Reaching the inbox verifies the email and completes any unconfirmed signup.
    if (!user.emailVerified)
       await User.updateOne({ _id: user._id }, { emailVerified: true });
 
@@ -374,8 +353,6 @@ async function changePassword({ user, currentPassword, password, req }) {
    const withHash = await User.findById(user._id).select("+passwordHash");
    const ok = await bcrypt.compare(currentPassword, withHash.passwordHash);
 
-   // A stolen access token is not enough on its own to lock someone out of
-   // their own account.
    if (!ok)
       throw new ApiError(
          "INVALID_CREDENTIALS",
@@ -392,8 +369,8 @@ async function changePassword({ user, currentPassword, password, req }) {
       ip: req.ip,
    });
 
-   // Every other device is signed out; this one gets a fresh login so the
-   // person is not thrown out of the page they are standing on.
+   // Every other device is out. This one gets a fresh login so the person is
+   // not thrown off the page they are standing on.
    const fresh = await User.findById(user._id);
    const { session, refreshToken } = await sessions.createSession(
       fresh._id,

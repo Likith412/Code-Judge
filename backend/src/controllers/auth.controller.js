@@ -5,7 +5,9 @@ const {
    readRefreshCookie,
 } = require("../utils/cookies");
 
-// What the browser is allowed to know about the signed in person.
+/* ---- helpers, not route handlers ----------------------------------- */
+
+// Explicitly allow only safe user fields to be sent to the browser.
 const publicUser = (user) => ({
    id: user._id,
    username: user.username,
@@ -19,13 +21,13 @@ const publicUser = (user) => ({
    createdAt: user.createdAt,
 });
 
-// The three places that hand out a login all answer the same way: the access
-// token in the body for memory, the refresh token in a cookie the page
-// cannot read.
+// Login, refresh, and password change return the access token and set the refresh token as an HttpOnly cookie.
 const sendLogin = (res, status, { accessToken, refreshToken, user }) => {
    setRefreshCookie(res, refreshToken);
    res.status(status).json({ accessToken, user: publicUser(user) });
 };
+
+/* ---- route handlers, mounted in routes/auth.routes.js -------------- */
 
 const register = async (req, res) => {
    const result = await auth.register({ ...req.valid.body, ip: req.ip });

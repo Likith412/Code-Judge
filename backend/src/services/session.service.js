@@ -6,8 +6,10 @@ const { randomToken, hashToken } = require("../utils/tokens");
 const { toMs } = require("../utils/duration");
 const { parseUserAgent } = require("../utils/userAgent");
 
-// Allows a short grace period for simultaneous refreshes from the same device.
+// Allow simultaneous refreshes from the same device to avoid false token-reuse detection.
 const GRACE_WINDOW_MS = 10_000;
+
+/* ---- helpers ------------------------------------------------------- */
 
 const newFamilyId = () => `fam_${randomBytes(6).toString("hex")}`;
 
@@ -17,7 +19,8 @@ function clientInfo(req) {
    return { ip: req.ip, userAgent, device: parseUserAgent(userAgent) };
 }
 
-// Creates a new login session and stores only the hashed refresh token.
+/* ---- used by services/auth.service.js, never by a controller ------- */
+
 async function createSession(userId, req) {
    const refreshToken = randomToken();
 
