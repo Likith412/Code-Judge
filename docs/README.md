@@ -1,6 +1,6 @@
 # Code Judge — Documents
 
-The plan for this project, in four documents.
+The plan for this project, and how to check the parts that are built.
 
 | # | Document | What is inside |
 |---|----------|----------------|
@@ -8,6 +8,8 @@ The plan for this project, in four documents.
 | 2 | [02-dev-plan.md](02-dev-plan.md) | Phase-by-phase build order, folder layout, timeline, risks |
 | 3 | [03-db-design.md](03-db-design.md) | All collections with fields, types, examples, indexes, and the relationship picture |
 | 4 | [04-authentication.md](04-authentication.md) | Login: email + password, rotating refresh tokens, roles, threat list |
+| 5 | [05-design.md](05-design.md) | What is on each screen and which field it comes from, written for whoever designs them |
+| 6 | [06-phase1-checklist.md](06-phase1-checklist.md) | The by-hand run through the login, to do before calling phase 1 finished |
 
 Short version: build V1 first — login, problems, editor, queue, Docker worker, verdict. Everything else can wait.
 

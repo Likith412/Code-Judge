@@ -62,8 +62,6 @@ Who the person is, their role, and their score counters.
 | `stats.languageCounts` | Object | no | `{ java: 40, python: 12 }` |
 | `solvedProblemIds` | ObjectId[] | no | unique list, used to count a problem only once |
 | `lastLoginAt` | Date | no | |
-| `failedLoginCount` | Number | yes | default `0`, reset on success |
-| `lockedUntil` | Date | no | set when there are too many failed logins |
 | `createdAt` / `updatedAt` | Date | yes | |
 
 **Example**
@@ -88,7 +86,6 @@ Who the person is, their role, and their score counters.
   },
   "solvedProblemIds": ["6702b0aa...", "6702b0bb..."],
   "lastLoginAt": "2026-09-16T04:20:11.000Z",
-  "failedLoginCount": 0,
   "createdAt": "2026-07-20T06:00:00.000Z",
   "updatedAt": "2026-09-16T04:20:11.000Z"
 }

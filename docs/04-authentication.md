@@ -37,7 +37,7 @@ Email is still used, but only for two one-way things: the verification link when
 
 | Piece             | What it is                                                           | Where it is kept                        | How long it lasts                           |
 | ----------------- | -------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------- |
-| **Access token**  | Signed JWT with the user id, role, and `tokenVersion`                | React memory only, never `localStorage` | 10 minutes                                  |
+| **Access token**  | Signed JWT (HS256) with the user id, role, and `tokenVersion`        | React memory only, never `localStorage` | 10 minutes                                  |
 | **Refresh token** | 32 random bytes. Not a JWT.                                          | httpOnly cookie on the path `/api/auth` | 14 days, but replaced every time it is used |
 | **Session**       | A row in `sessions` holding the SHA-256 of the current refresh token | MongoDB                                 | Removed by a TTL index when it expires      |
 | **Email links**   | Verify email, reset password. Random, saved as a hash.               | MongoDB `authTokens`                    | 24 h / 30 min                               |
@@ -67,10 +67,10 @@ Email is still used, but only for two one-way things: the verification link when
 }
 ```
 
-- `tv` is the user's `tokenVersion`. Every request compares it with the value in the database (cached in Redis for 30 seconds). If they are different, the token is dead. That is how a ban or a password change takes effect right away.
+- `tv` is the user's `tokenVersion`. Every request compares it with the value in the database. If they are different, the token is dead. That is how a ban or a password change takes effect right away. It costs one read per request; a 30 second Redis cache in front of it is the obvious saving once Redis is in the stack.
 - `sid` is the session id, so one device can be logged out on its own.
 - `typ` stops one kind of token being used in place of another.
-- Signed with **RS256**, so anything else that needs to read tokens only needs the public key.
+- Signed with **HS256** using one secret, `JWT_SECRET`. Anything that needs to read a token needs that same secret, so today only the API does. If a second service ever has to verify tokens on its own, move to RS256 and hand it the public key instead.
 
 ---
 
@@ -91,11 +91,15 @@ Two bcrypt details to remember:
 - bcrypt only reads the **first 72 bytes** of a password. Anything after that is ignored, so set a maximum length of 72 in the Zod rule instead of letting people think a longer password is safer.
 - The salt is already inside the hash string (`$2b$12$<salt><hash>`), so there is no separate salt field in the database.
 
-**Password rules:** between 10 and 72 characters, and not a common password (`zxcvbn` score 3 or more). No "must have one capital letter" rule — length helps more. The 72 is bcrypt's own limit, not a made-up number.
+**Password rules:** between 10 and 72 characters. Nothing else — no "must have one capital letter" rule, and no check against a list of common passwords. The 72 is bcrypt's own limit, not a made-up number.
+
+That means `password123` and `1234567890` are both accepted. A common-password check (`zxcvbn` score 3 or more) is the cheapest thing that would stop them, and it is worth adding back before this is open to anyone but you.
 
 **Same answer every time:** register and forgot-password give the same reply whether or not the email exists. Otherwise the endpoint tells an attacker who has an account here.
 
 **Verification link:** a random 32-byte token. Only its SHA-256 hash is saved, so a leaked database cannot be used to verify anyone. It works once and dies after 24 hours.
+
+The link in the email points at the web app (`WEB_URL/verify?token=...`), and that page calls `GET /api/auth/verify`. One base URL then covers both development, where Vite proxies `/api`, and production, where the API sits on another host. It also lets the page show the four outcomes — verified, expired, already used, not valid — instead of dropping the person on a login screen with no explanation.
 
 Until the email is verified the user can browse problems but cannot submit code. That keeps throwaway bots out of the judge queue.
 
@@ -109,11 +113,22 @@ Things that matter here:
 
 - If the email does not exist, still run `bcrypt.compare` against a dummy hash. Otherwise the reply time tells the attacker that the account exists.
 - The message is the same for a wrong email and a wrong password: _"email or password is wrong"_.
-- Lockout: 5 wrong tries in 15 minutes locks the account for 15 minutes (`lockedUntil` on the user). There is also an IP limit of 20 login calls per 15 minutes.
 - Not verified yet → `403 EMAIL_NOT_VERIFIED`, with a button to send the mail again.
 - Every successful login writes a `sessions` row with browser, OS, and IP, which is what the device list uses.
 
-**Because there is no second step, the password is the only wall.** Three things carry the weight instead: bcrypt so a stolen database is slow to crack, lockout and rate limits so guessing is slow, and the common-password check so the obvious ones never get in. If you ever want a second step later, an emailed code is the easiest thing to add — it needs one extra collection type and one extra screen, and nothing in this design blocks it.
+**Because there is no second step, the password is the only wall.** One thing carries the weight today: bcrypt, so a stolen database is slow to crack. If you ever want a second step later, an emailed code is the easiest thing to add — it needs one extra collection type and one extra screen, and nothing in this design blocks it.
+
+> **Say this part plainly.** There is no rate limit, no account lockout, and no
+> common-password check. A guesser can try `password123` against every address
+> they know, as fast as bcrypt will answer — roughly four tries a second per
+> connection — and nothing stops them or even slows them down. Failed attempts
+> land in `auditLogs` as `LOGIN_FAILED`, which makes the attempt visible
+> afterwards but does nothing while it is happening.
+>
+> Three things would close it, cheapest first: the common-password check
+> (section 3), the account lockout, and the rate limits in section 10. The
+> first two need no new infrastructure. The third needs Redis, which arrives in
+> phase 6.
 
 ---
 
@@ -181,10 +196,11 @@ Sensitive actions — change password, delete account — always ask for the **c
 Middleware order on a protected route:
 
 ```
-requestId -> helmet -> cors -> rateLimit -> requireAuth -> requireVerifiedEmail -> requireRole('SETTER') -> requireOwnership -> validate(zod) -> controller
+requestId -> helmet -> cors -> rateLimit -> requireAuth -> requireVerifiedEmail -> requireRole(["SETTER", "ADMIN"]) -> requireOwnership -> validate(zod) -> controller
 ```
 
-- `requireAuth`: read the `Authorization: Bearer` header, check the RS256 signature, then `typ`, `iss`, `aud`, `exp`, then compare `tv` with the user's `tokenVersion` and check `status === ACTIVE`.
+- `requireAuth`: read the `Authorization: Bearer` header, check the HS256 signature, then `typ`, `iss`, `aud`, `exp`, then compare `tv` with the user's `tokenVersion` and check `status === ACTIVE`.
+- `requireRole` takes the list of roles allowed on that route and nothing else gets through. **The roles do not stack.** A route an `ADMIN` should reach has to name `ADMIN`, even where it also allows `SETTER` — which is why the line above lists both. It is more to type at each route, and it means the rule reads where it is mounted instead of being hidden inside the middleware. A misspelt role throws when the route is mounted, because the alternative is a route that quietly refuses everyone.
 - `requireOwnership`: a `SETTER` may only touch problems whose `createdBy` is their own id. Never take that id from the request body.
 - React hides buttons by role, but that is only for looks. The server checks again every time.
 
@@ -209,6 +225,11 @@ Set-Cookie: refresh_token=<random>;
 ---
 
 ## 10. Rate limits
+
+> **Not built yet.** The counters below need Redis, which arrives with the
+> submission queue in phase 6. There is no account lockout either, so until
+> then bcrypt's own cost is the only thing slowing a password guesser down.
+> The table stays here as the plan.
 
 All counters live in Redis and expire by themselves.
 
@@ -260,23 +281,30 @@ The worker is a program, not a person, so it must never use a user token.
 ## 13. Environment variables
 
 ```
-JWT_PRIVATE_KEY=       # RS256 private key (PEM)
-JWT_PUBLIC_KEY=        # RS256 public key (PEM)
+JWT_SECRET=            # HS256 secret, at least 32 characters
 JWT_ISSUER=code-judge
 JWT_AUDIENCE=code-judge-web
 ACCESS_TOKEN_TTL=10m
 REFRESH_TOKEN_TTL=14d
 BCRYPT_ROUNDS=12
-WORKER_HMAC_SECRET=
-COOKIE_DOMAIN=
+COOKIE_DOMAIN=         # empty on localhost
 ALLOWED_ORIGINS=http://localhost:5173
-SMTP_URL=
+WEB_URL=http://localhost:5173
+SMTP_URL=console://
 MAIL_FROM=no-reply@code-judge.dev
 ```
 
-None of these has a default inside the code. If one is missing, the server refuses to start.
+None of these has a default inside the code. If one is missing, the server refuses to start. `COOKIE_DOMAIN` is the one exception: it is allowed to be empty, because on localhost the cookie has no domain.
 
-In development, print the email to the console instead of sending it, or use Mailhog. Do not put a real SMTP password in the repo.
+`WEB_URL` is where the two email links point. `WORKER_HMAC_SECRET` from the earlier draft is gone for now — the worker does not exist until phase 6, and an unused required variable is just something else to get wrong.
+
+Make a secret with:
+
+```
+node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+```
+
+In development `SMTP_URL=console://` prints the whole email, link and all, to the log instead of sending it. Nodemailer still builds the message, so the development path runs the same code as production. For a real inbox in development use Mailhog (`SMTP_URL=smtp://localhost:1025`). Do not put a real SMTP password in the repo.
 
 ---
 
@@ -284,7 +312,7 @@ In development, print the email to the console instead of sending it, or use Mai
 
 | Attack                          | Defence                                                                                    |
 | ------------------------------- | ------------------------------------------------------------------------------------------ |
-| Password guessing               | bcrypt cost 12, account lockout, rate limits, common-password check                        |
+| Password guessing               | bcrypt cost 12, and nothing else. **No lockout, no rate limit, no common-password check** — see the note in section 4 |
 | Someone reads the database      | Only hashes are stored: password, refresh token, reset token                               |
 | XSS reading the token           | Access token only in memory, refresh cookie is HttpOnly, CSP header                        |
 | CSRF                            | SameSite=Strict, cookie only on `/api/auth`, Origin check, no cookie auth on normal routes |
@@ -295,18 +323,22 @@ In development, print the email to the console instead of sending it, or use Mai
 | Bot accounts flooding the judge | Code cannot be submitted until the email is verified                                       |
 | Admin account taken over        | Few admins, strong passwords, every admin action in the audit log                          |
 
-**Known limits, said plainly:** there is no second factor, so a leaked or guessed password is enough to get in — that is the trade we chose for a simpler build. A stolen access token works for up to 10 minutes. There is no device fingerprinting and no impossible-travel check.
+**Known limits, said plainly:** there is no second factor, so a leaked or guessed password is enough to get in — that is the trade we chose for a simpler build. Guessing one is currently only as hard as bcrypt makes it, because nothing rejects a weak password or limits how many can be tried. A stolen access token works for up to 10 minutes. There is no device fingerprinting and no impossible-travel check.
 
 ---
 
 ## 15. Build order (this is Phase 1 of the dev plan)
+
+> **Status: built.** Steps 1 to 5 and 7 are done. Step 6 is not: neither rate
+> limits nor lockout exist, and rate limits need Redis in phase 6 (section 10).
+> The by-hand checks are in [06-phase1-checklist.md](06-phase1-checklist.md).
 
 1. `users`, `sessions`, and `authTokens` collections, bcrypt hashing, register and login that return only an access token. No refresh yet.
 2. Add the refresh cookie and rotation. Test that replaying an old token kills the family.
 3. Email verification and password reset.
 4. `requireAuth`, `requireRole`, `requireVerifiedEmail`, and the `tokenVersion` check.
 5. React: auth context, axios interceptor with one shared refresh, protected routes.
-6. Rate limits and lockout.
+6. Rate limits. (Lockout was dropped from the design — section 4.)
 7. Later, if you want: the device list page.
 
 **Test these three by hand before moving on:**

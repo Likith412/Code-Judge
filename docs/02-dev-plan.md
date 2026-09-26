@@ -2,14 +2,23 @@
 
 Rule for the whole project: **the app must work at the end of every phase.** Never leave a phase half done and jump to the next one.
 
-Current state of the repo:
+Current state of the repo: **phases 0 and 1 are done.** Sign up, confirm the
+address, sign in, stay signed in, and change the password all work.
 
 ```
 Code-Judge/
-├── backend/          express + mongoose scaffold (app.js, server.js, config/, models/, routes/)
-├── frontend/         vite + react scaffold
-├── docs/             these documents
+├── backend/            express + mongoose, auth finished
+├── frontend/           vite + react, auth screens finished
+├── docs/               these documents
+├── docker-compose.yml  MongoDB now, Redis from phase 6
 └── idea.md
+```
+
+MongoDB runs in Docker. From the repo root:
+
+```
+docker compose up -d      # start MongoDB
+docker compose down       # stop it, keep the data
 ```
 
 ---
@@ -76,9 +85,10 @@ frontend/src/
 
 ---
 
-## Phase 1 — Authentication (4–6 days)
+## Phase 1 — Authentication (4–6 days) — **done**
 
 This is the biggest non-judge piece. Build it from [04-authentication.md](04-authentication.md).
+The by-hand checks are in [06-phase1-checklist.md](06-phase1-checklist.md).
 
 Login is only **email + password**. No second step, no Google, no GitHub, no authenticator app. Email is used for two links only: verify the address, and reset a forgotten password.
 
@@ -91,6 +101,12 @@ Login is only **email + password**. No second step, no Google, no GitHub, no aut
 5. Logout, logout-all, password change, password reset.
 6. `requireAuth`, `requireRole`, `requireVerifiedEmail` middleware.
 7. React: auth context, axios interceptor that refreshes on `401`, protected routes.
+
+Two things landed differently from the first draft, both written up in
+[04-authentication.md](04-authentication.md):
+
+- Access tokens are signed **HS256 with one secret**, not RS256 with a key pair. Only the API reads them.
+- **No rate limits and no account lockout.** Rate limits need Redis, which arrives in phase 6. bcrypt is the only thing slowing a password guesser down until then.
 
 **Done when:** you log in, wait for the access token to expire, keep clicking, and nothing breaks — the token refreshes by itself. Replaying an old refresh token logs the real user out too.
 

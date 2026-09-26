@@ -11,12 +11,12 @@ sequenceDiagram
     A->>A: bcrypt.compare (always run, even if there is no user)
 
     alt password is wrong
-        A->>DB: failedLoginCount + 1, lock for 15 min after 5 tries
+        A->>DB: write auditLog LOGIN_FAILED
         A-->>U: 401 "email or password is wrong"
     else email is not verified yet
         A-->>U: 403 EMAIL_NOT_VERIFIED
     else password is right
         A->>DB: create a session (familyId, tokenHash, device, ip)
-        A->>DB: failedLoginCount = 0, lastLoginAt = now
+        A->>DB: lastLoginAt = now
         A-->>U: 200 accessToken + refresh cookie
     end

@@ -143,9 +143,9 @@ time, kilobytes for memory — 32768 KB wants to read as 32 MB.
 and can come back empty, so design a fallback row.
 
 **Fields that exist but should not appear in the UI:** `passwordHash` and
-`tokenHash` never leave the server. `tokenVersion`, `failedLoginCount`,
-`lockedUntil`, `jobId`, `workerId` are internal. Do not surface them, including in
-an admin screen, unless someone asks for a debugging view.
+`tokenHash` never leave the server. `tokenVersion`, `jobId` and `workerId` are
+internal. Do not surface them, including in an admin screen, unless someone
+asks for a debugging view.
 
 ---
 
@@ -189,8 +189,6 @@ Email and password. Four failure states:
 - Wrong email or wrong password — **the same message for both**, "email or password
   is wrong". Never reveal which. Do not put a "no account with that email?" hint
   under the field.
-- Account locked — 5 wrong attempts in 15 minutes locks it for 15 minutes. Say so,
-  and say when it lifts.
 - Email not verified — comes back as `403 EMAIL_NOT_VERIFIED`. This is not really an
   error, it is an unfinished step: show the resend control inline rather than a red
   failure.
