@@ -1,0 +1,147 @@
+.cj-nav {
+   display: flex;
+   align-items: center;
+   gap: 20px;
+   min-height: 58px;
+   padding: 12px 16px;
+   background: var(--color-bg);
+   border-bottom: 2px solid var(--color-divider);
+   position: sticky;
+   top: 0;
+   z-index: 5;
+}
+
+.cj-brand {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   margin-right: auto;
+   font-family: var(--font-heading);
+   font-weight: 800;
+   font-size: 18px;
+   color: var(--color-text);
+   text-decoration: none;
+}
+
+.cj-brand:hover {
+   color: var(--color-text);
+}
+
+.cj-brand-mark {
+   display: inline-block;
+   width: 14px;
+   height: 14px;
+   background: var(--color-accent);
+}
+
+.cj-nav-link {
+   font-size: 14px;
+   color: var(--color-text);
+   text-decoration: none;
+}
+
+.cj-nav-link:hover {
+   color: var(--color-accent);
+}
+
+.cj-nav-link-active {
+   color: var(--color-accent);
+}
+
+.cj-register {
+   color: var(--color-bg);
+}
+
+.cj-register:hover {
+   color: var(--color-bg);
+}
+
+.cj-nav-end {
+   display: flex;
+   align-items: center;
+   justify-content: flex-end;
+   gap: 16px;
+   min-width: 200px;
+}
+
+.cj-me {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   font-size: 14px;
+   color: var(--color-text);
+   text-decoration: none;
+}
+
+.cj-me:hover {
+   color: var(--color-text);
+}
+
+.cj-avatar {
+   display: inline-grid;
+   place-items: center;
+   width: 28px;
+   height: 28px;
+   background: var(--color-text);
+   color: var(--color-bg);
+   font-size: 12px;
+   font-weight: 800;
+}
+
+.cj-skeleton {
+   display: inline-block;
+   background: linear-gradient(
+      90deg,
+      var(--color-surface) 25%,
+      var(--color-neutral-300) 50%,
+      var(--color-surface) 75%
+   );
+   background-size: 200% 100%;
+   animation: cj-shimmer 1.2s linear infinite;
+}
+
+.cj-skeleton-name {
+   width: 72px;
+   height: 14px;
+}
+
+.cj-skeleton-avatar {
+   width: 28px;
+   height: 28px;
+}
+
+/* ---- tablet: tighten the spacing so the row still fits on one line -- */
+
+@media (max-width: 900px) {
+   .cj-nav {
+      gap: 14px;
+      padding: 12px;
+   }
+
+   .cj-nav-end {
+      gap: 12px;
+      min-width: 0;
+   }
+}
+
+/* ---- phone: two rows, wordmark on its own ---------------------------- */
+
+@media (max-width: 640px) {
+   .cj-nav {
+      flex-wrap: wrap;
+      row-gap: 10px;
+   }
+
+   .cj-brand {
+      width: 100%;
+      margin-right: 0;
+   }
+
+   .cj-nav-end {
+      margin-left: auto;
+   }
+
+   .cj-me-name {
+      display: none;
+   }
+}

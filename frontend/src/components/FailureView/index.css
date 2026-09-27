@@ -1,0 +1,5 @@
+.failure-view-message {
+   max-width: 44ch;
+   margin-bottom: 20px;
+   color: var(--color-neutral-700);
+}

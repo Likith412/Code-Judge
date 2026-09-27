@@ -1,32 +1,130 @@
-.page {
-   display: flex;
-   min-height: 100vh;
-   align-items: center;
-   justify-content: center;
+/* ---- page wrappers: one per screen width in the design -------------- */
+
+/* Problems, problem, submissions, submission, editor, test cases, admin. */
+.cj-main {
+   max-width: 1180px;
+   margin: 0 auto;
+   padding: 28px var(--space-6) 64px;
 }
 
-.card {
-   width: 100%;
-   max-width: 24rem;
-   padding: 1.5rem;
-   border: 1px solid #1e293b;
-   border-radius: 0.5rem;
+/* Sign in, register, check email, verify, forgot, reset, signed out. */
+.cj-main-narrow {
+   max-width: 420px;
+   margin: 0 auto;
+   padding: 48px var(--space-6) 64px;
 }
 
-.status {
-   margin-top: 1rem;
-   font-family: ui-monospace, monospace;
-   font-size: 0.875rem;
+.cj-main-profile {
+   max-width: 900px;
+   margin: 0 auto;
+   padding: 36px var(--space-6) 64px;
 }
 
-.status.up {
-   color: #34d399;
+.cj-main-settings {
+   max-width: 1000px;
+   margin: 0 auto;
+   padding: 28px var(--space-6) 64px;
 }
 
-.status.down {
-   color: #fbbf24;
+/* ---- headings: the 42px h1 in index.css is never used --------------- */
+
+/* The index screens — Problems, Settings. */
+.cj-page-title {
+   font-size: 32px;
+   margin: 0 0 var(--space-4);
+   padding-bottom: var(--space-4);
+   border-bottom: 2px solid var(--color-divider);
 }
 
-.status.error {
-   color: #fb7185;
+/* The form screens: smaller, with a tighter rule. */
+.cj-form-title {
+   font-size: 28px;
+   margin: 0 0 20px;
+   padding-bottom: 14px;
+   border-bottom: 2px solid var(--color-divider);
+}
+
+/* An outcome or detail screen: 28px, no rule under it. */
+.cj-screen-title {
+   font-size: 28px;
+   margin: 0 0 14px;
+}
+
+/* h6 is the section label. index.css already makes it 13px uppercase. */
+h6 {
+   margin: var(--space-6) 0 var(--space-2);
+   color: var(--color-neutral-700);
+}
+
+/* ---- small type ---------------------------------------------------- */
+
+/* Label above one value. */
+.cj-eyebrow {
+   font-size: 11px;
+   letter-spacing: 0.08em;
+   text-transform: uppercase;
+   color: var(--color-neutral-700);
+   margin-bottom: var(--space-1);
+}
+
+/* Label above a group of controls: a filter column, a stat block. */
+.cj-group-label {
+   font-size: 11px;
+   letter-spacing: 0.1em;
+   text-transform: uppercase;
+   color: var(--color-neutral-700);
+   margin-bottom: var(--space-2);
+}
+
+/* The design's secondary text. Not .text-muted, which is lighter. */
+.cj-muted {
+   color: var(--color-neutral-700);
+}
+
+/* Counts, rates, runtimes: digits that do not jitter between rows. */
+.cj-num {
+   font-variant-numeric: tabular-nums;
+}
+
+/* ---- rules and blocks ---------------------------------------------- */
+
+/* Under a section header. */
+.cj-section-rule {
+   border-bottom: 2px solid var(--color-divider);
+}
+
+/* Between rows of a list or table. */
+.cj-row-rule {
+   border-bottom: 1px solid var(--color-divider);
+}
+
+/* A quiet panel: the unverified notice, a rate-limit message. */
+.cj-surface {
+   background: var(--color-surface);
+}
+
+/* ---- phone ---------------------------------------------------------- */
+
+@media (max-width: 640px) {
+   /* A narrower gutter than the design's 24px. */
+   .cj-main,
+   .cj-main-narrow,
+   .cj-main-profile,
+   .cj-main-settings {
+      padding-left: var(--space-4);
+      padding-right: var(--space-4);
+   }
+
+   /* 32px is a lot of heading on a 360px screen. 26px is the size the design
+      already uses for the problem title. */
+   .cj-page-title {
+      font-size: 26px;
+   }
+
+   /* iOS Safari zooms the whole page when you focus an input smaller than
+      16px, and does not zoom back out. This is the fix for that, not a
+      readability tweak — do not lower it. */
+   .input {
+      font-size: 16px;
+   }
 }
