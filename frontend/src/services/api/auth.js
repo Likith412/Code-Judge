@@ -10,6 +10,12 @@ function register({ username, email, password }) {
       .then((response) => response.data);
 }
 
+function verifyEmail(token) {
+   return client
+      .get("/auth/verify", { params: { token } })
+      .then((response) => response.data);
+}
+
 function resendVerification({ email }) {
    return client
       .post("/auth/resend-verification", { email })
@@ -34,6 +40,7 @@ export {
    refreshSession,
    getCurrentUser,
    register,
+   verifyEmail,
    resendVerification,
    login,
    logout,

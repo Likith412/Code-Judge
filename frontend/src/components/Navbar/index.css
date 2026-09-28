@@ -48,14 +48,6 @@
    color: var(--color-accent);
 }
 
-.cj-register {
-   color: var(--color-bg);
-}
-
-.cj-register:hover {
-   color: var(--color-bg);
-}
-
 .cj-nav-end {
    display: flex;
    align-items: center;

@@ -5,10 +5,10 @@ import { apiError } from "../../services/api/client";
 
 import "./index.css";
 
-// Helps users who signed up but haven't verified their email yet.
-// The response stays vague to prevent revealing whether an account exists.
+// Helps users resend verification emails without revealing whether an account exists.
+// The button stays visible but disabled until an address is entered.
 const ResendVerification = (props) => {
-   const { email } = props;
+   const { email, variant = "secondary", block = false } = props;
 
    const [state, setState] = useState("idle");
    const [message, setMessage] = useState(null);
@@ -28,8 +28,6 @@ const ResendVerification = (props) => {
       }
    };
 
-   if (!email) return null;
-
    const label = {
       idle: "Send the email again",
       sending: "Sending…",
@@ -40,9 +38,9 @@ const ResendVerification = (props) => {
       <div className="resend">
          <button
             type="button"
-            className="btn btn-secondary"
+            className={`btn btn-${variant}${block ? " btn-block" : ""}`}
             onClick={onClickResend}
-            disabled={state !== "idle"}
+            disabled={state !== "idle" || !email}
          >
             {label}
          </button>

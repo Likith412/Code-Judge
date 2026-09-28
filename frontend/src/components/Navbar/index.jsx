@@ -62,7 +62,7 @@ const Navbar = (props) => {
                   <NavLink to="/login" className={linkClass}>
                      Sign in
                   </NavLink>
-                  <Link to="/register" className="btn btn-primary cj-register">
+                  <Link to="/register" className="btn btn-primary">
                      Register
                   </Link>
                </>

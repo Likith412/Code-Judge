@@ -54,7 +54,7 @@ const LoginPage = () => {
             <Notice tone="note">
                <span>
                   <strong>One step left.</strong> Your email isn’t verified yet
-                  — open the link we sent to {form.email}.
+                  - open the link we sent to {form.email}.
                </span>
 
                <div>
@@ -102,7 +102,7 @@ const LoginPage = () => {
             </div>
 
             <p className="login-session-note">
-               Sessions last 14 days on this device. There’s no “remember me” —
+               Sessions last 14 days on this device. There’s no “remember me” -
                it’s always on.
             </p>
          </form>

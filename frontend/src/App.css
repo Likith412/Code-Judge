@@ -71,6 +71,11 @@ h6 {
    font-size: 13px;
 }
 
+/* The measure the design uses for every explanatory paragraph. */
+.cj-prose {
+   max-width: 44ch;
+}
+
 /* ---- small type ---------------------------------------------------- */
 
 /* Label above one value. */
