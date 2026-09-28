@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
-import { login, logout, refreshSession } from "./services/api/auth";
+import {
+   changePassword as changePasswordRequest,
+   updateProfile as updateProfileRequest,
+   login,
+   logout,
+   refreshSession,
+} from "./services/api/auth";
 import { apiError } from "./services/api/client";
 import { onSessionLost, setAccessToken } from "./services/api/tokenStore";
 
@@ -107,6 +113,24 @@ function App() {
       return data.user;
    }, []);
 
+   // The server revokes every session and signs this device back in, handing
+   // back a new token and user. Adopting them is the same work as signing in,
+   // so it belongs here rather than in the page.
+   const changePassword = useCallback(async (body) => {
+      const data = await changePasswordRequest(body);
+
+      setAccessToken(data.accessToken);
+      setUser(data.user);
+   }, []);
+
+   // Not a session change, but it does rewrite the user the navbar and the
+   // guards read, so it goes through here rather than a raw setter.
+   const updateProfile = useCallback(async (changes) => {
+      const data = await updateProfileRequest(changes);
+
+      setUser(data.user);
+   }, []);
+
    const signOut = useCallback(async () => {
       try {
          await logout();
@@ -134,7 +158,9 @@ function App() {
    );
 
    const renderSuccessView = () => (
-      <UserContext.Provider value={{ user, signIn, signOut }}>
+      <UserContext.Provider
+         value={{ user, signIn, signOut, changePassword, updateProfile }}
+      >
          <Navbar />
 
          <Routes>

@@ -149,6 +149,45 @@ async function verifyEmail({ token }) {
    return { status: "verified" };
 }
 
+// Only three fields can be edited. The address is not one of them: it is the
+// login name and the thing the confirmation link proved, so it is permanent.
+async function updateProfile({ user, username, displayName, bio }) {
+   const changes = {};
+
+   if (username !== undefined && username !== user.username) {
+      const taken = await User.exists({ username, _id: { $ne: user._id } });
+
+      if (taken) {
+         throw ApiError.validation("Invalid input", [
+            { field: "username", issue: "That username is taken" },
+         ]);
+      }
+
+      changes.username = username;
+   }
+
+   if (displayName !== undefined) changes.displayName = displayName;
+   if (bio !== undefined) changes.bio = bio;
+
+   if (Object.keys(changes).length === 0) return user;
+
+   try {
+      await User.updateOne({ _id: user._id }, changes);
+   } catch (err) {
+      // Two people claiming one username in the same instant. The check above
+      // narrows the window; the unique index closes it.
+      if (err.code === 11000) {
+         throw ApiError.validation("Invalid input", [
+            { field: "username", issue: "That username is taken" },
+         ]);
+      }
+
+      throw err;
+   }
+
+   return User.findById(user._id);
+}
+
 async function login({ email, password, req }) {
    const user = await User.findOne({ email }).select("+passwordHash");
 
@@ -299,7 +338,9 @@ async function listSessions(user, currentSessionId) {
       device: { browser: row.device?.browser, os: row.device?.os },
       ip: row.ip,
       lastUsedAt: row.lastUsedAt,
-      createdAt: row.createdAt,
+      // Rows created before signedInAt existed fall back to their own
+      // createdAt, which is the best the old data can offer.
+      signedInAt: row.signedInAt || row.createdAt,
       current: String(row._id) === String(currentSessionId),
    }));
 }
@@ -386,6 +427,7 @@ async function changePassword({ user, currentPassword, password, req }) {
 
 module.exports = {
    register,
+   updateProfile,
    resendVerification,
    verifyEmail,
    login,

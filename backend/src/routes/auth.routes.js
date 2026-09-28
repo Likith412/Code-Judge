@@ -46,6 +46,12 @@ router.post("/logout", requireAllowedOrigin, controller.logout);
 
 // --- need an access token ----------------------------------------------
 router.get("/me", requireAuth, controller.me);
+router.patch(
+   "/me",
+   requireAuth,
+   validate({ body: schemas.updateProfileSchema }),
+   controller.updateMe,
+);
 router.post("/logout-all", requireAuth, controller.logoutAll);
 router.get("/sessions", requireAuth, controller.listSessions);
 router.delete(

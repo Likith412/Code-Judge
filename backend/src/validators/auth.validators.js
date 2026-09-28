@@ -24,6 +24,12 @@ const username = z
 
 const registerSchema = z.object({ username, email, password });
 
+const updateProfileSchema = z.object({
+   username: username.optional(),
+   displayName: z.string().trim().max(50, "At most 50 characters").optional(),
+   bio: z.string().trim().max(300, "At most 300 characters").optional(),
+});
+
 const loginSchema = z.object({
    email,
    password: z.string().min(1, "Enter your password"),
@@ -57,6 +63,7 @@ const changePasswordSchema = z
 
 module.exports = {
    registerSchema,
+   updateProfileSchema,
    loginSchema,
    emailOnlySchema,
    verifyQuerySchema,

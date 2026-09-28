@@ -79,6 +79,12 @@ const me = async (req, res) => {
    res.json({ user: publicUser(req.user) });
 };
 
+const updateMe = async (req, res) => {
+   const user = await auth.updateProfile({ user: req.user, ...req.valid.body });
+
+   res.json({ user: publicUser(user) });
+};
+
 const listSessions = async (req, res) => {
    res.json({ sessions: await auth.listSessions(req.user, req.auth.sid) });
 };
@@ -114,6 +120,7 @@ module.exports = {
    logout,
    logoutAll,
    me,
+   updateMe,
    listSessions,
    revokeSession,
    forgotPassword,

@@ -30,6 +30,7 @@ async function createSession(userId, req) {
       tokenHash: hashToken(refreshToken),
       status: "ACTIVE",
       expiresAt: new Date(Date.now() + toMs(REFRESH_TOKEN_TTL)),
+      signedInAt: new Date(),
       lastUsedAt: new Date(),
       ...clientInfo(req),
    });
@@ -48,6 +49,8 @@ async function rotateSession(current, req) {
       previousTokenHash: current.tokenHash,
       status: "ACTIVE",
       expiresAt: current.expiresAt,
+      // The login did not restart, it was only refreshed.
+      signedInAt: current.signedInAt,
       lastUsedAt: new Date(),
       ...clientInfo(req),
    });
@@ -98,7 +101,7 @@ const revokeAllForUser = (userId, reason) =>
 const listActiveSessions = (userId) =>
    Session.find({ userId, status: "ACTIVE", expiresAt: { $gt: new Date() } })
       .sort({ lastUsedAt: -1 })
-      .select("device ip lastUsedAt createdAt");
+      .select("device ip signedInAt lastUsedAt createdAt");
 
 module.exports = {
    GRACE_WINDOW_MS,

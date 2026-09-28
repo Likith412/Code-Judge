@@ -428,6 +428,21 @@ this one. The new-account path hits several of these in a row.
 editor. There is no mobile app and no stated breakpoint strategy, so decide what
 the problem page does when the columns cannot coexist, and say what you decided.
 
+**Decided: two breakpoints, 900px and 640px.** Neither the prototype nor
+`modernist.css` contains a single media query, so these are ours.
+
+| Width | What changes |
+|-------|--------------|
+| above 900px | the design as drawn |
+| 900px and under | spacing tightens. In the navbar the gap drops to 14px and the sign-in cluster gives up its 200px reserve — that reserve exists to stop the row shifting on a desktop, and on a narrow screen it is the thing causing the overflow |
+| 640px and under | the navbar becomes two rows, wordmark alone on the first. The username is hidden and the avatar initial carries it, because the name is the widest thing in the row. Page gutters drop from 24px to 16px |
+
+The navbar wraps rather than collapsing into a menu button: a menu needs open
+and close state, and at four links the two-row bar shows everything at once.
+
+The problem page's own answer — what happens when the question and the editor
+cannot sit side by side — is still open, and belongs with phase 3.
+
 ---
 
 ## 11. What the API does not provide

@@ -116,7 +116,8 @@ One document per login on one device. This is what makes refresh tokens rotate a
 | `ip` | String | no | |
 | `userAgent` | String | no | |
 | `device` | Object | no | `{ browser, os }` parsed from the user agent, for the device list |
-| `lastUsedAt` | Date | yes | |
+| `signedInAt` | Date | yes | when this device signed in. Copied forward on every rotation, so it survives a refresh |
+| `lastUsedAt` | Date | yes | when the session was last exchanged for a new access token |
 | `expiresAt` | Date | yes | TTL index deletes the row after this |
 | `createdAt` / `updatedAt` | Date | yes | |
 

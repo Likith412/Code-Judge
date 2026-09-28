@@ -40,6 +40,26 @@ function login({ email, password }) {
       .then((response) => response.data);
 }
 
+function updateProfile(changes) {
+   return client.patch("/auth/me", changes).then((response) => response.data);
+}
+
+function changePassword({ currentPassword, password }) {
+   return client
+      .post("/auth/change-password", { currentPassword, password })
+      .then((response) => response.data);
+}
+
+function listSessions() {
+   return client.get("/auth/sessions").then((response) => response.data);
+}
+
+function revokeSession(sessionId) {
+   return client
+      .delete(`/auth/sessions/${sessionId}`)
+      .then((response) => response.data);
+}
+
 function logout() {
    return client.post("/auth/logout").then((response) => response.data);
 }
@@ -51,12 +71,16 @@ function logoutEverywhere() {
 export {
    refreshSession,
    getCurrentUser,
+   updateProfile,
    register,
    verifyEmail,
    resendVerification,
    forgotPassword,
    resetPassword,
    login,
+   changePassword,
+   listSessions,
+   revokeSession,
    logout,
    logoutEverywhere,
 };

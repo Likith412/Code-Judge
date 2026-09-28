@@ -1,0 +1,187 @@
+.settings-layout {
+   display: grid;
+   grid-template-columns: 180px minmax(0, 1fr);
+   gap: var(--space-8);
+}
+
+/* ---- the tab rail ---------------------------------------------------- */
+
+.settings-tabs {
+   display: flex;
+   flex-direction: column;
+   border-top: 1px solid var(--color-divider);
+}
+
+.settings-tab {
+   padding: 10px 12px;
+   border: 0;
+   border-bottom: 1px solid var(--color-divider);
+   background: none;
+   color: var(--color-text);
+   font: inherit;
+   font-size: 14px;
+   text-align: left;
+   cursor: pointer;
+}
+
+.settings-tab-active {
+   background: var(--color-text);
+   color: var(--color-bg);
+   font-weight: 600;
+}
+
+/* ---- panels ---------------------------------------------------------- */
+
+.settings-content {
+   min-width: 0;
+}
+
+.settings-panel {
+   display: flex;
+   flex-direction: column;
+   gap: var(--space-4);
+   max-width: 460px;
+}
+
+/* A value that is shown rather than edited. Same height as an input, so a
+   read-only row sits on the same rhythm as an editable one. */
+.settings-static {
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: 10px;
+   min-height: 36px;
+   font-size: 14px;
+}
+
+.settings-aside {
+   margin: 0;
+   max-width: 52ch;
+   font-size: 13px;
+   color: var(--color-neutral-700);
+}
+
+/* Ink on light, the design's way of marking something that just happened. */
+.settings-done {
+   padding: 12px 14px;
+   background: var(--color-text);
+   color: var(--color-bg);
+   font-size: 13px;
+}
+
+.settings-save {
+   display: flex;
+   align-items: center;
+   gap: 12px;
+}
+
+.settings-saved {
+   font-size: 13px;
+   color: var(--color-neutral-700);
+}
+
+/* ---- devices --------------------------------------------------------- */
+
+.settings-device-toolbar {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   flex-wrap: wrap;
+   gap: 12px;
+   margin-bottom: var(--space-2);
+}
+
+.settings-device-count {
+   margin: 0;
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}
+
+.settings-device-head {
+   display: grid;
+   grid-template-columns: minmax(0, 1.4fr) 130px minmax(0, 1fr) 90px 90px;
+   gap: 0 12px;
+   padding: var(--space-2) 0;
+   border-bottom: 2px solid var(--color-divider);
+   font-size: 11px;
+   letter-spacing: 0.08em;
+   text-transform: uppercase;
+   color: var(--color-neutral-700);
+}
+
+.settings-device-row {
+   display: grid;
+   grid-template-columns: minmax(0, 1.4fr) 130px minmax(0, 1fr) 90px 90px;
+   gap: 0 12px;
+   align-items: center;
+   padding: 10px 0;
+   border-bottom: 1px solid var(--color-divider);
+   font-size: 14px;
+}
+
+/* The device you are on right now reads heavier than the rest. */
+.settings-device-current {
+   font-weight: 600;
+}
+
+.settings-device-name {
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: 10px;
+}
+
+.settings-device-ip {
+   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+   font-size: 13px;
+}
+
+.settings-device-when {
+   font-size: 13px;
+   color: var(--color-neutral-700);
+}
+
+.settings-device-action {
+   text-align: right;
+}
+
+.settings-device-button {
+   font-size: 13px;
+}
+
+/* ---- phone ----------------------------------------------------------- */
+
+@media (max-width: 640px) {
+   .settings-layout {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-6);
+   }
+
+   /* The tabs become a row across the top instead of a column beside. */
+   .settings-tabs {
+      flex-direction: row;
+      gap: var(--space-4);
+      border-top: 0;
+      border-bottom: 1px solid var(--color-divider);
+   }
+
+   .settings-tab {
+      border-bottom: 0;
+   }
+
+   /* IP and "signed in" are the two the small screen can spare. */
+   .settings-device-head,
+   .settings-device-row {
+      grid-template-columns: minmax(0, 1fr) 90px;
+   }
+
+   .settings-device-ip,
+   .settings-device-head span:nth-child(2),
+   .settings-device-head span:nth-child(4) {
+      display: none;
+   }
+
+   .settings-device-row .settings-device-when:last-of-type {
+      display: none;
+   }
+}

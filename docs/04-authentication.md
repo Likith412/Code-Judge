@@ -175,6 +175,8 @@ Small detail on "logout on this device": it kills the refresh token at once, but
 
 Sensitive actions — change password, delete account — always ask for the **current password** in the request body. A stolen access token alone is not enough to do lasting damage.
 
+**What can be edited:** username, display name and bio, through `PATCH /api/auth/me`. A username change is allowed and checked for uniqueness the same way registration is — worth knowing that it changes the person's profile URL, so any link to the old one stops working.
+
 **There is no change-email feature.** The email address you sign up with is the one you keep. It is the login name, the reset address, and the thing the verification link proved, so letting it change means another verify-the-new-address flow, a rollback mail to the old address, and a new way to take over an account. Not worth it here. If someone really needs a different address, they make a new account.
 
 ---
@@ -270,6 +272,7 @@ The worker is a program, not a person, so it must never use a user token.
 | POST   | `/api/auth/logout`              | cookie                    | log out this device                            |
 | POST   | `/api/auth/logout-all`          | access                    | log out everywhere                             |
 | GET    | `/api/auth/me`                  | access                    | who am I                                       |
+| PATCH  | `/api/auth/me`                  | access                    | edit username, display name, bio               |
 | GET    | `/api/auth/sessions`            | access                    | device list                                    |
 | DELETE | `/api/auth/sessions/:id`        | access                    | remove one device                              |
 | POST   | `/api/auth/forgot-password`     | —                         | send the reset mail                            |

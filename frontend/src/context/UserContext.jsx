@@ -6,6 +6,8 @@ const UserContext = createContext({
    user: null,
    signIn: async () => {},
    signOut: async () => {},
+   changePassword: async () => {},
+   updateProfile: async () => {},
 });
 
 export default UserContext;
