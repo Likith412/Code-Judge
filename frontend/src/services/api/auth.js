@@ -4,6 +4,18 @@ function getCurrentUser() {
    return client.get("/auth/me").then((response) => response.data);
 }
 
+function register({ username, email, password }) {
+   return client
+      .post("/auth/register", { username, email, password })
+      .then((response) => response.data);
+}
+
+function resendVerification({ email }) {
+   return client
+      .post("/auth/resend-verification", { email })
+      .then((response) => response.data);
+}
+
 function login({ email, password }) {
    return client
       .post("/auth/login", { email, password })
@@ -18,4 +30,12 @@ function logoutEverywhere() {
    return client.post("/auth/logout-all").then((response) => response.data);
 }
 
-export { refreshSession, getCurrentUser, login, logout, logoutEverywhere };
+export {
+   refreshSession,
+   getCurrentUser,
+   register,
+   resendVerification,
+   login,
+   logout,
+   logoutEverywhere,
+};

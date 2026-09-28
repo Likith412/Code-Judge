@@ -56,6 +56,21 @@ h6 {
    color: var(--color-neutral-700);
 }
 
+/* ---- auth forms: shared by sign in, register, forgot and reset -------- */
+
+.cj-form {
+   display: flex;
+   flex-direction: column;
+   gap: 14px;
+}
+
+/* The row of links under the submit button. */
+.cj-form-links {
+   display: flex;
+   justify-content: space-between;
+   font-size: 13px;
+}
+
 /* ---- small type ---------------------------------------------------- */
 
 /* Label above one value. */

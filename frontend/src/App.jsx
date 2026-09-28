@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
-import { logout, refreshSession } from "./services/api/auth";
+import { login, logout, refreshSession } from "./services/api/auth";
 import { apiError } from "./services/api/client";
 import { onSessionLost, setAccessToken } from "./services/api/tokenStore";
 
@@ -96,6 +96,17 @@ function App() {
       setRetryCount((count) => count + 1);
    };
 
+   // Pages call this rather than setting the user themselves, so the token in
+   // memory and the user in state can never disagree.
+   const signIn = useCallback(async (credentials) => {
+      const data = await login(credentials);
+
+      setAccessToken(data.accessToken);
+      setUser(data.user);
+
+      return data.user;
+   }, []);
+
    const signOut = useCallback(async () => {
       try {
          await logout();
@@ -123,7 +134,7 @@ function App() {
    );
 
    const renderSuccessView = () => (
-      <UserContext.Provider value={{ user, setUser, signOut }}>
+      <UserContext.Provider value={{ user, signIn, signOut }}>
          <Navbar />
 
          <Routes>

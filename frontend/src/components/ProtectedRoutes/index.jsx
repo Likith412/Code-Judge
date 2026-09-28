@@ -10,7 +10,7 @@ const ProtectedRoutes = () => {
    const location = useLocation();
 
    if (!user) {
-      // Remembered so sign-in can send them back where they were going.
+      // Remembered so sign-in can send them back where
       return (
          <Navigate to="/login" replace state={{ from: location.pathname }} />
       );
