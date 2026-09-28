@@ -1,0 +1,12 @@
+.check-email-aside {
+   font-size: 13px;
+   color: var(--color-neutral-700);
+}
+
+.check-email-field {
+   margin-top: var(--space-4);
+}
+
+.check-email-resend {
+   margin-top: 20px;
+}

@@ -22,6 +22,18 @@ function resendVerification({ email }) {
       .then((response) => response.data);
 }
 
+function forgotPassword({ email }) {
+   return client
+      .post("/auth/forgot-password", { email })
+      .then((response) => response.data);
+}
+
+function resetPassword({ token, password }) {
+   return client
+      .post("/auth/reset-password", { token, password })
+      .then((response) => response.data);
+}
+
 function login({ email, password }) {
    return client
       .post("/auth/login", { email, password })
@@ -42,6 +54,8 @@ export {
    register,
    verifyEmail,
    resendVerification,
+   forgotPassword,
+   resetPassword,
    login,
    logout,
    logoutEverywhere,

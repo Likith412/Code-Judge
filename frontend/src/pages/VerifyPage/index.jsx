@@ -90,6 +90,10 @@ const VerifyPage = () => {
                />
 
                <ResendVerification email={email} variant="primary" block />
+
+               <div className="cj-form-links">
+                  <Link to="/login">Back to sign in</Link>
+               </div>
             </div>
          )}
       </main>

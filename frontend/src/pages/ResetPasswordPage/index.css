@@ -1,0 +1,13 @@
+.reset-warning {
+   margin: 0;
+   padding: 10px 12px;
+   background: var(--color-surface);
+   font-size: 13px;
+   line-height: 1.5;
+}
+
+.reset-actions {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 12px;
+}

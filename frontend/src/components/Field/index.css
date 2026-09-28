@@ -9,3 +9,34 @@
    font-size: 12px;
    color: var(--color-neutral-700);
 }
+
+/* Holds the eye button over the right-hand end of the input. */
+.field-input {
+   position: relative;
+}
+
+/* Room for the button, so the text never runs underneath it. */
+.input-password {
+   padding-right: 36px;
+}
+
+/* Square, matching the input's 36px height. */
+.field-eye {
+   position: absolute;
+   top: 0;
+   right: 0;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   width: 36px;
+   height: 36px;
+   padding: 0;
+   border: 0;
+   background: none;
+   color: var(--color-neutral-700);
+   cursor: pointer;
+}
+
+.field-eye:hover {
+   color: var(--color-text);
+}
