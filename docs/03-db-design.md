@@ -196,6 +196,7 @@ One-time email links: verify the address when you sign up, and reset a forgotten
 | `slug` | String | yes | unique, used in the URL |
 | `description` | String | yes | Markdown |
 | `difficulty` | Enum[`EASY`,`MEDIUM`,`HARD`] | yes | |
+| `difficultyRank` | Number | yes | `EASY` 1, `MEDIUM` 2, `HARD` 3. Kept in step by a hook, only used to sort |
 | `constraints` | String[] | no | one line each |
 | `examples` | Object[] | no | `{ input, output, explanation }` — shown on the page |
 | `starterCode` | Object | no | key = language, value = code string |
@@ -219,6 +220,7 @@ One-time email links: verify the address when you sign up, and reset a forgotten
   "slug": "two-sum",
   "description": "Given an array of integers `nums` and an integer `target`, return the indices of the two numbers that add up to `target`.",
   "difficulty": "EASY",
+  "difficultyRank": 1,
   "constraints": ["2 <= nums.length <= 10000", "-10^9 <= nums[i] <= 10^9"],
   "examples": [
     { "input": "4\n2 7 11 15\n9", "output": "0 1", "explanation": "nums[0] + nums[1] = 9" }
@@ -245,6 +247,7 @@ One-time email links: verify the address when you sign up, and reset a forgotten
 
 - `{ slug: 1 }` unique
 - `{ isPublished: 1, difficulty: 1 }`
+- `{ isPublished: 1, difficultyRank: 1 }` — the problems list sorted easy first
 - `{ tags: 1 }`
 - `{ title: "text", description: "text" }` for search
 
@@ -259,8 +262,8 @@ Kept apart from the problem so hidden cases never leak in a problem response, an
 | `_id` | ObjectId | yes | |
 | `problemId` | ObjectId → `problems` | yes | |
 | `order` | Number | yes | run order, starts at 1 |
-| `input` | String | yes | exactly what goes to stdin |
-| `expectedOutput` | String | yes | |
+| `input` | String | no | exactly what goes to stdin. May be empty: a program need not read any |
+| `expectedOutput` | String | yes | never empty, that is nearly always a half-filled form |
 | `isHidden` | Boolean | yes | `false` = sample, used by the Run button |
 | `explanation` | String | no | only for sample cases |
 | `weight` | Number | no | default `1`, for partial scoring later |

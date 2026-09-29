@@ -11,6 +11,8 @@ The plan for this project, and how to check the parts that are built.
 | 5 | [05-design.md](05-design.md) | What is on each screen and which field it comes from, written for whoever designs them |
 | 6 | [06-phase1-checklist.md](06-phase1-checklist.md) | The by-hand run through the login, to do before calling phase 1 finished |
 | 7 | [07-frontend-structure.md](07-frontend-structure.md) | Folder layout and conventions for the React side, taken from the Sendly frontend |
+| 8 | [08-problems-api.md](08-problems-api.md) | The problems and test case routes, and how a hidden case is kept off every public response |
+| 9 | [09-phase2-checklist.md](09-phase2-checklist.md) | The by-hand run through the problems API, to do before calling phase 2 finished |
 
 Short version: build V1 first — login, problems, editor, queue, Docker worker, verdict. Everything else can wait.
 

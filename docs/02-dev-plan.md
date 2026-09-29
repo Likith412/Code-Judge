@@ -2,8 +2,10 @@
 
 Rule for the whole project: **the app must work at the end of every phase.** Never leave a phase half done and jump to the next one.
 
-Current state of the repo: **phases 0 and 1 are done.** Sign up, confirm the
-address, sign in, stay signed in, and change the password all work.
+Current state of the repo: **phases 0 and 1 are done, and phase 2's backend is
+done.** Sign up, confirm the address, sign in, stay signed in, and change the
+password all work. The problems API is finished and seeded with 12 questions;
+its two pages on the React side are what is left of phase 2.
 
 ```
 Code-Judge/
@@ -50,11 +52,13 @@ backend/src/
 │   ├── auth/
 │   │   ├── index.js    one handler per route
 │   │   └── helpers.js  what those handlers share
+│   ├── problems/       same two files, same rule
 ├── middlewares/   auth, roles, validation, rate limit, errors
-├── validators/    zod schemas
+├── validators/    zod schemas, plus common.js for the shared pieces
+├── seed/          npm run seed: the starter problems
 ├── queue/         bullmq queue + job names
 ├── sockets/       websocket setup
-└── utils/         tokens, cookies, durations, access tokens
+└── utils/         tokens, cookies, durations, access tokens, slugs, audit
 
 worker/src/
 ├── index.js       queue consumer
@@ -112,7 +116,7 @@ Login is only **email + password**. No second step, no Google, no GitHub, no aut
 3. Login → access token in memory, refresh token in an httpOnly cookie.
 4. Refresh with rotation and reuse detection.
 5. Logout, logout-all, password change, password reset.
-6. `requireAuth`, `requireRole`, `requireVerifiedEmail` middleware.
+6. `requireAuth` and `requireRole` middleware. `requireAuth` does the whole check: signature, account status, `emailVerified`, and `tokenVersion`.
 7. React: auth context, axios interceptor that refreshes on `401`, protected routes.
 
 Two things landed differently from the first draft, both written up in
@@ -125,16 +129,43 @@ Two things landed differently from the first draft, both written up in
 
 ---
 
-## Phase 2 — Problems and test cases (3–4 days)
+## Phase 2 — Problems and test cases (3–4 days) — **backend done**
 
-**Do**
+Build it from [08-problems-api.md](08-problems-api.md). The by-hand checks are in
+[09-phase2-checklist.md](09-phase2-checklist.md).
 
-- `problems` and `testCases` collections with the fields from [03-db-design.md](03-db-design.md).
-- Public: `GET /api/problems` (paged), `GET /api/problems/:slug`.
-- Setter/admin: `POST`, `PATCH`, `DELETE /api/problems/:id`, and test case endpoints.
-- Public reads must strip hidden test cases and drafts. Write a test for this.
-- Seed script with 10–15 problems.
+**Done**
+
+1. `problems` and `testCases` collections with the fields from [03-db-design.md](03-db-design.md).
+2. Public: `GET /api/problems` (paged, filtered, searched, sorted), `GET /api/problems/:slug`.
+3. Setter/admin: `POST`, `PATCH`, `DELETE /api/problems/:id`, and four test case routes.
+4. Public reads strip hidden test cases and drafts.
+5. `npm run seed` makes an `admin` and a `setter` account if they are missing, then writes 12 problems and 58 test cases. Safe to run twice, and it refuses to make accounts when `NODE_ENV=production`.
+
+**Still to do**
+
 - React: problem list page and problem detail page.
+
+Five things landed differently from the first draft, all written up in
+[08-problems-api.md](08-problems-api.md):
+
+- **A new problem is always a draft.** `isPublished` is stripped from the create
+  body, so going live is always a PATCH — which is where the checks live.
+- **Publishing needs at least one test case and at least one sample**, and a
+  published problem cannot lose its last one of either. Phase 3's Run button has
+  nothing to run otherwise.
+- **A published problem cannot be deleted.** Unpublish it first.
+- **A draft is a 404, not a 403**, to everyone but its author and an admin. A 403
+  would admit that it exists. Same reason a visitor asking for `?status=DRAFT` is
+  quietly handed published problems instead of an error.
+- **A new `optionalAuth` middleware**, so one list route can work signed out and
+  show more when signed in. Phase 9 needs it again to mark solved problems.
+
+A note on testing: the checklist in
+[09-phase2-checklist.md](09-phase2-checklist.md) covers the hidden-case rule by
+hand, in step 3 and step 7. That is a checklist, not the automated test this
+phase originally asked for. When a test runner does arrive, that rule is the
+first thing to move into it.
 
 **Done when:** you can browse problems and open one, and no API response ever contains a hidden test case.
 

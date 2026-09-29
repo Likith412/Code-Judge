@@ -21,6 +21,15 @@ const requireAuth = async (req, _res, next) => {
          return next(new ApiError("ACCOUNT_BANNED", "This account is banned"));
       }
 
+      if (!user.emailVerified) {
+         return next(
+            new ApiError(
+               "EMAIL_NOT_VERIFIED",
+               "Confirm your email address first",
+            ),
+         );
+      }
+
       if (payload.tv !== user.tokenVersion) {
          return next(
             new ApiError(

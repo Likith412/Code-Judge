@@ -30,11 +30,10 @@ Three roles, checked on the server every time:
 Most screens are for `USER`. Setter and admin screens are section 9 and are
 lower priority — the plan builds their API long before their UI.
 
-There are also two states that are not roles and that the design has to handle
-separately, because they change what a signed-in person is allowed to do:
-
-- **Signed in, email not verified.** Can read problems. Cannot run or submit code.
-- **Signed in, verified.** Everything.
+There is no "signed in but not verified" state to design for. Login refuses an
+unverified account outright, so anyone signed in has a confirmed address. Someone
+who has registered but not opened the link is simply **signed out**, and can still
+read problems, because reading problems needs no account.
 
 ---
 
@@ -189,9 +188,9 @@ Email and password. Four failure states:
 - Wrong email or wrong password — **the same message for both**, "email or password
   is wrong". Never reveal which. Do not put a "no account with that email?" hint
   under the field.
-- Email not verified — comes back as `403 EMAIL_NOT_VERIFIED`. This is not really an
-  error, it is an unfinished step: show the resend control inline rather than a red
-  failure.
+- Email not verified — comes back as `403 EMAIL_NOT_VERIFIED`, and **no token is
+  issued**, so the person stays on this screen. This is not really an error, it is
+  an unfinished step: show the resend control inline rather than a red failure.
 - Rate limited — `429` with a `Retry-After` header telling you how many seconds.
 
 **5.5 Forgot password** — `POST /api/auth/forgot-password`

@@ -4,9 +4,10 @@ const { randomBytes } = require("node:crypto");
 
 const { BCRYPT_ROUNDS, REFRESH_TOKEN_TTL } = require("../../config/env");
 const logger = require("../../config/logger");
-const { User, Session, AuthToken, AuditLog } = require("../../models");
+const { User, Session, AuthToken } = require("../../models");
 const { ApiError } = require("../../utils/ApiError");
 const { randomToken, hashToken } = require("../../utils/tokens");
+const { recordAudit } = require("../../utils/audit");
 const { toMs } = require("../../utils/duration");
 const { parseUserAgent } = require("../../utils/userAgent");
 const { setRefreshCookie } = require("../../utils/cookies");
@@ -46,17 +47,6 @@ const sendLogin = (res, status, { accessToken, refreshToken, user }) => {
    setRefreshCookie(res, refreshToken);
    res.status(status).json({ accessToken, user: publicUser(user) });
 };
-
-/* ---- audit ------------------------------------------------------------ */
-
-// Writing the log must never be the reason a request fails.
-async function recordAudit(entry) {
-   try {
-      await AuditLog.create(entry);
-   } catch (err) {
-      logger.error({ err, action: entry.action }, "could not write audit log");
-   }
-}
 
 /* ---- sessions --------------------------------------------------------- */
 

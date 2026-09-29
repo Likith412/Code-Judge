@@ -101,7 +101,9 @@ That means `password123` and `1234567890` are both accepted. A common-password c
 
 The link in the email points at the web app (`WEB_URL/verify?token=...`), and that page calls `GET /api/auth/verify`. One base URL then covers both development, where Vite proxies `/api`, and production, where the API sits on another host. It also lets the page show the four outcomes — verified, expired, already used, not valid — instead of dropping the person on a login screen with no explanation.
 
-Until the email is verified the user can browse problems but cannot submit code. That keeps throwaway bots out of the judge queue.
+**Until the email is verified there is no sign in at all.** `POST /api/auth/login` checks the password first and then refuses with `403 EMAIL_NOT_VERIFIED`, before any session row or token is made. So an unverified account never holds an access token and never holds a refresh cookie.
+
+That is stricter than gating the judge alone, and it costs nothing: reading problems needs no token, so someone who has not opened the link yet can still browse the whole problem list while signed out. Nothing they could do with a token is anything they should be doing before the address is confirmed.
 
 ---
 
@@ -113,7 +115,7 @@ Things that matter here:
 
 - If the email does not exist, still run `bcrypt.compare` against a dummy hash. Otherwise the reply time tells the attacker that the account exists.
 - The message is the same for a wrong email and a wrong password: _"email or password is wrong"_.
-- Not verified yet → `403 EMAIL_NOT_VERIFIED`, with a button to send the mail again.
+- Not verified yet → `403 EMAIL_NOT_VERIFIED`, with a button to send the mail again. No token and no cookie are sent, so this is a dead end until the link is opened.
 - Every successful login writes a `sessions` row with browser, OS, and IP, which is what the device list uses.
 
 **Because there is no second step, the password is the only wall.** One thing carries the weight today: bcrypt, so a stolen database is slow to crack. If you ever want a second step later, an emailed code is the easiest thing to add — it needs one extra collection type and one extra screen, and nothing in this design blocks it.
@@ -186,7 +188,7 @@ Sensitive actions — change password, delete account — always ask for the **c
 | Permission                           | USER |    SETTER    | ADMIN |
 | ------------------------------------ | :--: | :----------: | :---: |
 | read published problems              |  ✅  |      ✅      |  ✅   |
-| submit code (needs a verified email) |  ✅  |      ✅      |  ✅   |
+| submit code                          |  ✅  |      ✅      |  ✅   |
 | read own submissions                 |  ✅  |      ✅      |  ✅   |
 | create / edit own problems           |  ❌  |      ✅      |  ✅   |
 | edit anyone's problem                |  ❌  |      ❌      |  ✅   |
@@ -195,13 +197,16 @@ Sensitive actions — change password, delete account — always ask for the **c
 | change roles, ban users              |  ❌  |      ❌      |  ✅   |
 | create contests                      |  ❌  |      ❌      |  ✅   |
 
+Every row above assumes a verified email, because an unverified account cannot sign in.
+
 Middleware order on a protected route:
 
 ```
-requestId -> helmet -> cors -> rateLimit -> requireAuth -> requireVerifiedEmail -> requireRole(["SETTER", "ADMIN"]) -> requireOwnership -> validate(zod) -> controller
+requestId -> helmet -> cors -> rateLimit -> requireAuth -> requireRole(["SETTER", "ADMIN"]) -> requireOwnership -> validate(zod) -> controller
 ```
 
-- `requireAuth`: read the `Authorization: Bearer` header, check the HS256 signature, then `typ`, `iss`, `aud`, `exp`, then compare `tv` with the user's `tokenVersion` and check `status === ACTIVE`.
+- `requireAuth`: read the `Authorization: Bearer` header, check the HS256 signature, then `typ`, `iss`, `aud`, `exp`, then compare `tv` with the user's `tokenVersion`, and check `status` and `emailVerified` on the user row.
+- **There is no `requireVerifiedEmail`.** There was one, mounted per route, and it could never fire: login refuses an unverified account, `emailVerified` is only ever written `true`, and neither `verify` nor `reset-password` hands out a token — so no route could ever be reached by an unverified user. The check now sits inside `requireAuth`, where one rule covers every protected route instead of each route having to remember a second middleware.
 - `requireRole` takes the list of roles allowed on that route and nothing else gets through. **The roles do not stack.** A route an `ADMIN` should reach has to name `ADMIN`, even where it also allows `SETTER` — which is why the line above lists both. It is more to type at each route, and it means the rule reads where it is mounted instead of being hidden inside the middleware. A misspelt role throws when the route is mounted, because the alternative is a route that quietly refuses everyone.
 - `requireOwnership`: a `SETTER` may only touch problems whose `createdBy` is their own id. Never take that id from the request body.
 - React hides buttons by role, but that is only for looks. The server checks again every time.
@@ -339,7 +344,7 @@ In development `SMTP_URL=console://` prints the whole email, link and all, to th
 1. `users`, `sessions`, and `authTokens` collections, bcrypt hashing, register and login that return only an access token. No refresh yet.
 2. Add the refresh cookie and rotation. Test that replaying an old token kills the family.
 3. Email verification and password reset.
-4. `requireAuth`, `requireRole`, `requireVerifiedEmail`, and the `tokenVersion` check.
+4. `requireAuth` (signature, status, `emailVerified`, `tokenVersion`) and `requireRole`.
 5. React: auth context, axios interceptor with one shared refresh, protected routes.
 6. Rate limits. (Lockout was dropped from the design — section 4.)
 7. Later, if you want: the device list page.

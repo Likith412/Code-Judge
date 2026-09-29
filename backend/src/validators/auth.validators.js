@@ -1,5 +1,6 @@
 const { z } = require("zod");
-const { isValidObjectId } = require("mongoose");
+
+const { objectId } = require("./common");
 
 const MIN_PASSWORD_LENGTH = 10;
 const MAX_PASSWORD_LENGTH = 72;
@@ -38,14 +39,6 @@ const loginSchema = z.object({
 const emailOnlySchema = z.object({ email });
 
 const verifyQuerySchema = z.object({ token: z.string().min(1) });
-
-const objectId = (message) =>
-   z
-      .string()
-      .refine(
-         (value) => value.length === 24 && isValidObjectId(value),
-         message,
-      );
 
 const sessionIdSchema = z.object({ id: objectId("Not a session id") });
 
