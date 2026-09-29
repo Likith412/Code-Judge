@@ -104,9 +104,22 @@ const listProblemsQuerySchema = z.preprocess(
       status: z.enum(["PUBLISHED", "DRAFT", "ALL"]).default("PUBLISHED"),
       mine: boolQuery,
 
+      // Left out means "any of them". Ignored for anyone not signed in.
+      progress: z.enum(["solved", "unsolved", "tried"]).optional(),
+
       sort: z
          .enum(["NEWEST", "OLDEST", "TITLE", "DIFFICULTY"])
          .default("NEWEST"),
+   }),
+);
+
+// Counts follow what the list is showing: same visibility, same difficulty.
+const tagsQuerySchema = z.preprocess(
+   dropEmpty,
+   z.object({
+      status: z.enum(["PUBLISHED", "DRAFT", "ALL"]).default("PUBLISHED"),
+      mine: boolQuery,
+      difficulty: difficulty.optional(),
    }),
 );
 
@@ -189,6 +202,7 @@ const updateTestCaseSchema = z
 
 module.exports = {
    listProblemsQuerySchema,
+   tagsQuerySchema,
    problemSlugSchema,
    problemIdSchema,
    testCaseParamsSchema,

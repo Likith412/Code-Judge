@@ -8,10 +8,12 @@ const {
    owns,
    problemCard,
    problemDetail,
+   solvedSet,
    fullCase,
    loadSamples,
    listFilter,
    listSort,
+   tagCounts,
    loadOwnProblem,
    loadOwnTestCase,
    pickSlug,
@@ -46,14 +48,28 @@ async function listProblems(req, res) {
    ]);
 
    const showDraftFields = canSeeDrafts(req.user);
+   const solved = req.user ? solvedSet(req.user) : null;
 
    res.json({
-      problems: rows.map((row) => problemCard(row, { showDraftFields })),
+      problems: rows.map((row) =>
+         problemCard(row, {
+            showDraftFields,
+            solved: solved ? solved.has(String(row._id)) : null,
+         }),
+      ),
       page: query.page,
       limit: query.limit,
       total,
       totalPages: Math.max(1, Math.ceil(total / query.limit)),
    });
+}
+
+async function listTags(req, res) {
+   // Same visibility rules as the list, so the counts match what you can see.
+   const filter = listFilter(req.valid.query, req.user);
+   const tags = await tagCounts(filter);
+
+   res.json({ tags, total: tags.length });
 }
 
 async function getProblem(req, res) {
@@ -66,8 +82,9 @@ async function getProblem(req, res) {
    if (!mayRead) throw ApiError.notFound("No such problem");
 
    const samples = await loadSamples(problem._id);
+   const solved = req.user ? solvedSet(req.user).has(String(problem._id)) : null;
 
-   res.json({ problem: problemDetail(problem, samples) });
+   res.json({ problem: problemDetail(problem, samples, solved) });
 }
 
 /* ---- writing a problem, setter and admin only ------------------------- */
@@ -134,8 +151,9 @@ async function updateProblem(req, res) {
    });
 
    const samples = await loadSamples(problem._id);
+   const solved = solvedSet(req.user).has(String(problem._id));
 
-   res.json({ problem: problemDetail(problem, samples) });
+   res.json({ problem: problemDetail(problem, samples, solved) });
 }
 
 async function deleteProblem(req, res) {
@@ -219,6 +237,7 @@ async function deleteTestCase(req, res) {
 
 module.exports = {
    listProblems,
+   listTags,
    getProblem,
    createProblem,
    updateProblem,

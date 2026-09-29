@@ -2,6 +2,7 @@
 const { Problem, TestCase } = require("../../models");
 const { ApiError } = require("../../utils/ApiError");
 const { slugify } = require("../../utils/slug");
+const { RESERVED_SLUGS } = require("../../utils/constants");
 const { runTransaction } = require("../../utils/transaction");
 
 /* ---- who is allowed to see and do what -------------------------------- */
@@ -33,8 +34,16 @@ const starterFor = (problem) =>
       ]),
    );
 
+// The problems this person has finished, as a set of strings to test against.
+const solvedSet = (user) =>
+   new Set((user?.solvedProblemIds || []).map((id) => String(id)));
+
+// Problems this person has submitted to. Empty until phase 4 fills it from
+// submissions, so "tried" matches nothing yet.
+const attemptedIds = () => [];
+
 // One row in the list. Draft fields are added only for a setter or admin.
-const problemCard = (problem, { showDraftFields }) => ({
+const problemCard = (problem, { showDraftFields, solved }) => ({
    id: problem._id,
    title: problem.title,
    slug: problem.slug,
@@ -43,6 +52,8 @@ const problemCard = (problem, { showDraftFields }) => ({
    acceptanceRate: acceptanceRate(problem.stats),
    solvedByCount: problem.stats.solvedByCount,
    totalSubmissions: problem.stats.totalSubmissions,
+   // Only for someone signed in: nobody else has a solved list to check.
+   ...(solved === null ? {} : { solved }),
    ...(showDraftFields
       ? {
            isPublished: problem.isPublished,
@@ -75,7 +86,7 @@ const fullCase = (row) => ({
 });
 
 // The problem page. Samples are passed in, already filtered.
-const problemDetail = (problem, samples) => ({
+const problemDetail = (problem, samples, solved = null) => ({
    id: problem._id,
    title: problem.title,
    slug: problem.slug,
@@ -97,6 +108,7 @@ const problemDetail = (problem, samples) => ({
       acceptedSubmissions: problem.stats.acceptedSubmissions,
       solvedByCount: problem.stats.solvedByCount,
    },
+   ...(solved === null ? {} : { solved }),
    isPublished: problem.isPublished,
    createdAt: problem.createdAt,
    updatedAt: problem.updatedAt,
@@ -129,6 +141,20 @@ function listFilter(query, user) {
    if (status === "DRAFT") filter.isPublished = false;
 
    if (query.mine && user) filter.createdBy = user._id;
+
+   // None of these mean anything to someone who is not signed in.
+   if (user && query.progress) {
+      const solved = user.solvedProblemIds || [];
+
+      if (query.progress === "solved") filter._id = { $in: solved };
+      if (query.progress === "unsolved") filter._id = { $nin: solved };
+
+      // Submitted to at least once and still not solved.
+      if (query.progress === "tried") {
+         filter._id = { $in: attemptedIds(user), $nin: solved };
+      }
+   }
+
    if (query.difficulty) filter.difficulty = query.difficulty;
    if (query.tags?.length) filter.tags = { $all: query.tags };
 
@@ -177,7 +203,24 @@ function pickSlug({ title, slug }) {
    return chosen;
 }
 
+// Every tag on the problems this person may see, with how many carry it.
+async function tagCounts(filter) {
+   const rows = await Problem.aggregate([
+      { $match: filter },
+      { $unwind: "$tags" },
+      { $group: { _id: "$tags", count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+   ]);
+
+   return rows.map((row) => ({ tag: row._id, count: row.count }));
+}
+
 async function assertSlugFree(slug, exceptId) {
+   // /problems/tags is a route, so no problem may answer to that slug.
+   if (RESERVED_SLUGS.includes(slug)) {
+      throw ApiError.conflict(`"${slug}" is reserved, pick another slug`);
+   }
+
    const filter = exceptId ? { slug, _id: { $ne: exceptId } } : { slug };
 
    if (await Problem.exists(filter)) {
@@ -328,6 +371,8 @@ module.exports = {
    owns,
    problemCard,
    problemDetail,
+   solvedSet,
+   attemptedIds,
    sampleCase,
    fullCase,
    loadSamples,
@@ -337,6 +382,7 @@ module.exports = {
    loadOwnTestCase,
    pickSlug,
    assertSlugFree,
+   tagCounts,
    isDuplicateKey,
    syncTestCaseCount,
    nextOrder,
