@@ -11,9 +11,7 @@ import Notice from "../../components/Notice";
 
 import "./index.css";
 
-// Unlike the verify link, this one is not spent on arrival — the form shows
-// first and the token is only used when the new password is submitted. So the
-// page cannot know the link is dead until then.
+// The token is only spent on submit, so a dead link shows up only then.
 const DEAD_LINKS = {
    LINK_EXPIRED: {
       title: "This reset link has expired",
@@ -55,8 +53,7 @@ const ResetPasswordPage = () => {
       try {
          await resetPassword({ token, password });
 
-         // The server revoked every session, this one included. Drop the local
-         // token too, or the navbar would keep claiming they are signed in.
+         // Every session is gone, so drop the local token as well.
          if (user) await signOut();
 
          setDone(true);

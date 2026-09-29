@@ -1,6 +1,4 @@
-// Short, readable times for the device list. Relative while it is recent,
-// because "4 minutes ago" answers "is that me right now?" and a timestamp
-// does not. Older than a day, the date is the more useful thing.
+// Short times for the device list: relative when recent, a date when older.
 const dateFormatter = new Intl.DateTimeFormat("en-GB", {
    day: "numeric",
    month: "short",

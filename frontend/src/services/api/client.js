@@ -36,8 +36,7 @@ client.interceptors.response.use(null, async (error) => {
 
    if (!response || response.status !== 401 || config._retried) throw error;
 
-   // These two answering 401 means the session itself is finished. Asking
-   // again would get the same answer.
+   // A 401 from these two means the session is over. Retrying changes nothing.
    if (
       config.url?.includes("/auth/refresh") ||
       config.url?.includes("/auth/login")

@@ -43,16 +43,18 @@ What happens when someone presses Submit:
 
 ```
 backend/src/
-├── config/        env, db, redis, logger
+├── config/        env, db, redis, logger, mailer
 ├── models/        mongoose schemas
 ├── routes/        route files only, no logic
-├── controllers/   read request, call service, send response
-├── services/      the real logic (auth, problems, submissions)
-├── middlewares/    auth, roles, validation, rate limit, errors
+├── controllers/
+│   ├── auth/
+│   │   ├── index.js    one handler per route
+│   │   └── helpers.js  what those handlers share
+├── middlewares/   auth, roles, validation, rate limit, errors
 ├── validators/    zod schemas
 ├── queue/         bullmq queue + job names
 ├── sockets/       websocket setup
-└── utils/
+└── utils/         tokens, cookies, durations, access tokens
 
 worker/src/
 ├── index.js       queue consumer
@@ -74,6 +76,17 @@ frontend/src/
 ## Phase 0 — Base setup (1–2 days)
 
 **Do**
+
+> There is no `services/` layer. A controller reads the request, does the work
+> and sends the response. Anything a middleware also needs — signing and
+> checking access tokens — lives in `utils/`, because a middleware importing
+> from a controller would have the dependencies pointing the wrong way.
+>
+> A controller with more than a handful of routes becomes a folder:
+> `index.js` holds one handler per route and is what `routes/` imports,
+> `helpers.js` holds what those handlers share. Nothing in `helpers.js` touches
+> `res` — it does work and returns a value, and the handler decides what to
+> send. Phase 2's problems and submissions get the same shape.
 
 - Add to backend: `zod`, `bcrypt`, `jsonwebtoken`, `cookie-parser`, `helmet`, `pino`, `ioredis`, `bullmq`, `nodemailer`.
 - Add to frontend: `react-router-dom`, `axios`, `@monaco-editor/react`.

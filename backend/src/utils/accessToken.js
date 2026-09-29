@@ -1,3 +1,4 @@
+// Signs and checks access tokens. In utils because requireAuth needs it too.
 const jwt = require("jsonwebtoken");
 
 const {
@@ -6,7 +7,7 @@ const {
    JWT_AUDIENCE,
    ACCESS_TOKEN_TTL,
 } = require("../config/env");
-const { ApiError } = require("../utils/ApiError");
+const { ApiError } = require("./ApiError");
 
 const ALGORITHM = "HS256";
 

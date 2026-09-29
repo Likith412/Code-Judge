@@ -1,5 +1,5 @@
 const { User } = require("../models");
-const { verifyAccessToken } = require("../services/token.service");
+const { verifyAccessToken } = require("../utils/accessToken");
 const { ApiError } = require("../utils/ApiError");
 
 const requireAuth = async (req, _res, next) => {

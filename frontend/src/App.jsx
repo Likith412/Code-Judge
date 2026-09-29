@@ -6,6 +6,7 @@ import {
    updateProfile as updateProfileRequest,
    login,
    logout,
+   logoutEverywhere,
    refreshSession,
 } from "./services/api/auth";
 import { apiError } from "./services/api/client";
@@ -72,8 +73,7 @@ function App() {
 
             const { status } = apiError(error);
 
-            // A visitor with no cookie fails this, which is not an error. Only
-            // a request that never got an answer is a failure worth showing.
+            // No cookie just means nobody is signed in. That is not an error.
             if (status === 401) {
                setUser(null);
                setApiStatus(apiStatusConstants.success);
@@ -93,8 +93,7 @@ function App() {
       };
    }, [retryCount]);
 
-   // The interceptor gave up on a refresh while the app was open, so the
-   // session is over.
+   // The interceptor gave up on a refresh, so the session is over.
    useEffect(() => onSessionLost(() => setUser(null)), []);
 
    const onRetry = () => {
@@ -102,8 +101,7 @@ function App() {
       setRetryCount((count) => count + 1);
    };
 
-   // Pages call this rather than setting the user themselves, so the token in
-   // memory and the user in state can never disagree.
+   // Pages call this so the token and the user are always set together.
    const signIn = useCallback(async (credentials) => {
       const data = await login(credentials);
 
@@ -113,9 +111,7 @@ function App() {
       return data.user;
    }, []);
 
-   // The server revokes every session and signs this device back in, handing
-   // back a new token and user. Adopting them is the same work as signing in,
-   // so it belongs here rather than in the page.
+   // The server hands back a new token and user, so this is a sign-in again.
    const changePassword = useCallback(async (body) => {
       const data = await changePasswordRequest(body);
 
@@ -123,12 +119,22 @@ function App() {
       setUser(data.user);
    }, []);
 
-   // Not a session change, but it does rewrite the user the navbar and the
-   // guards read, so it goes through here rather than a raw setter.
+   // Rewrites the user the navbar reads, so it goes through here too.
    const updateProfile = useCallback(async (changes) => {
       const data = await updateProfileRequest(changes);
 
       setUser(data.user);
+   }, []);
+
+   // Ends every session, this one included, and bumps tokenVersion so tokens
+   // already handed out die at once.
+   const signOutEverywhere = useCallback(async () => {
+      try {
+         await logoutEverywhere();
+      } finally {
+         setAccessToken(null);
+         setUser(null);
+      }
    }, []);
 
    const signOut = useCallback(async () => {
@@ -159,7 +165,14 @@ function App() {
 
    const renderSuccessView = () => (
       <UserContext.Provider
-         value={{ user, signIn, signOut, changePassword, updateProfile }}
+         value={{
+            user,
+            signIn,
+            signOut,
+            signOutEverywhere,
+            changePassword,
+            updateProfile,
+         }}
       >
          <Navbar />
 

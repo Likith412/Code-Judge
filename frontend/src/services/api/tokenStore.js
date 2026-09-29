@@ -8,8 +8,7 @@ const setAccessToken = (token) => {
    accessToken = token;
 };
 
-// The axios interceptor runs outside React. This is how it tells the app that
-// the session is gone, and why.
+// How the axios interceptor, which is outside React, reports a lost session.
 const onSessionLost = (listener) => {
    listeners.add(listener);
 

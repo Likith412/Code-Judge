@@ -218,7 +218,7 @@ const PasswordTab = () => {
 /* ---- devices ---------------------------------------------------------- */
 
 const DevicesTab = () => {
-   const { signOut } = useContext(UserContext);
+   const { signOutEverywhere } = useContext(UserContext);
 
    const [sessions, setSessions] = useState([]);
    const [apiStatus, setApiStatus] = useState(apiStatusConstants.inProgress);
@@ -374,7 +374,7 @@ const DevicesTab = () => {
                      <button
                         type="button"
                         className="btn btn-primary"
-                        onClick={signOut}
+                        onClick={signOutEverywhere}
                      >
                         Sign out everywhere
                      </button>

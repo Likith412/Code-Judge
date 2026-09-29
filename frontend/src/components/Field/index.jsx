@@ -4,8 +4,7 @@ import { EyeIcon, EyeOffIcon } from "../Icons";
 
 import "./index.css";
 
-// Reusable field with a label, input, and error or hint below; the eye button is custom.
-// Errors replace hints, and htmlFor/id connects the label to the input.
+// Label, input, and one line under it. An error replaces the hint.
 const Field = (props) => {
    const {
       label,

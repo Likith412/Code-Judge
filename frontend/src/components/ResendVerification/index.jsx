@@ -5,8 +5,7 @@ import { apiError } from "../../services/api/client";
 
 import "./index.css";
 
-// Helps users resend verification emails without revealing whether an account exists.
-// The button stays visible but disabled until an address is entered.
+// Sends the confirmation email again. Disabled, not hidden, with no address.
 const ResendVerification = (props) => {
    const { email, variant = "secondary", block = false } = props;
 

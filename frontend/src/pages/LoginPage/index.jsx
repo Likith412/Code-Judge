@@ -33,8 +33,7 @@ const LoginPage = () => {
       try {
          await signIn(form);
 
-         // Back to whatever they were trying to reach, which ProtectedRoutes
-         // remembered on the way past.
+         // Back to the page they wanted, which ProtectedRoutes remembered.
          navigate(location.state?.from || "/problems", { replace: true });
       } catch (error) {
          setProblem(apiError(error));
@@ -62,8 +61,7 @@ const LoginPage = () => {
                </div>
             </Notice>
          ) : (
-            // One message for a wrong address and a wrong password. Which of the
-            // two it was is not the browser's business.
+            // One message for a wrong email and a wrong password.
             <Notice>{problem?.message}</Notice>
          )}
 

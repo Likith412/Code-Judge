@@ -36,8 +36,7 @@ const sessionSchema = new Schema(
          os: String,
       },
 
-      // When this device signed in. Copied forward on every rotation, so it
-      // keeps pointing at the original login rather than the last refresh.
+      // When this device signed in. Copied on each refresh, so it never moves.
       signedInAt: { type: Date, required: true, default: Date.now },
 
       // When the session was last exchanged for a new access token.

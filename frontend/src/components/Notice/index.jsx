@@ -1,7 +1,6 @@
 import "./index.css";
 
-// Displays a message for the whole form above it.
-// Use "error" for failures and "note" for informational messages.
+// A message about the whole form. "error" for failures, "note" for steps left.
 const Notice = (props) => {
    const { tone = "error", children } = props;
 

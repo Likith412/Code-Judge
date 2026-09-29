@@ -1,11 +1,11 @@
 import { createContext } from "react";
 
-// `user` is null when nobody is signed in; guards and the navbar use it.
-// Pages use signIn/signOut so the user state and authentication token stay in sync.
+// `user` is null when signed out. Pages use these so the token stays in sync.
 const UserContext = createContext({
    user: null,
    signIn: async () => {},
    signOut: async () => {},
+   signOutEverywhere: async () => {},
    changePassword: async () => {},
    updateProfile: async () => {},
 });

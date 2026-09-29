@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 
-// Left unguarded on purpose: an unknown address is a 404 whether or not
-// anyone is signed in.
+// Not guarded: an unknown address is a 404 whoever is looking.
 const NotFoundPage = () => (
    <main className="cj-main-narrow">
       <h1 className="cj-screen-title">No page at this address</h1>

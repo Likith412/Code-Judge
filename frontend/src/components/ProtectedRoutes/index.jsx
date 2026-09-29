@@ -3,8 +3,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 import UserContext from "../../context/UserContext";
 
-// Wraps the pages that need a signed-in user. Anyone else goes to sign-in
-// rather than seeing a screen full of failed requests.
+// Wraps the pages that need a signed-in user. Everyone else goes to sign-in.
 const ProtectedRoutes = () => {
    const { user } = useContext(UserContext);
    const location = useLocation();

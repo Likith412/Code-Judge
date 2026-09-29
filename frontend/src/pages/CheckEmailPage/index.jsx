@@ -6,8 +6,7 @@ import ResendVerification from "../../components/ResendVerification";
 
 import "./index.css";
 
-// Where registering lands. Two ways in: straight from the form, which carries
-// the address in route state, or by opening the URL directly, which does not.
+// Where registering lands. The address may come with it, or may not.
 const CheckEmailPage = () => {
    const location = useLocation();
 

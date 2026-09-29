@@ -8,8 +8,7 @@ import Field from "../../components/Field";
 import ResendVerification from "../../components/ResendVerification";
 
 
-// Where the emailed link lands. Four ways it can end, and each one needs a way
-// forward — a dead end here means an account nobody can use.
+// Where the email link lands. Four endings, each with a way forward.
 const OUTCOMES = {
    verified: {
       title: "Email verified",

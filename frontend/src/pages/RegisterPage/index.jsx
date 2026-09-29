@@ -28,9 +28,7 @@ const RegisterPage = () => {
       try {
          await register(form);
 
-         // The server answers the same way whether or not the address was free,
-         // so the next screen has to be vague too. The address goes with it, for
-         // the resend control there.
+         // The server never says if the email was free, so nor does the next page.
          navigate("/check-email", {
             replace: true,
             state: { email: form.email },
@@ -38,8 +36,7 @@ const RegisterPage = () => {
       } catch (error) {
          const { code, message } = apiError(error);
 
-         // A taken username is a real field error: usernames are public.
-         // A taken address is not — that path returns the same success.
+         // A taken username is shown. A taken email looks like success.
          if (code === "VALIDATION_ERROR") setFields(fieldErrors(error));
          else setProblem(message);
       } finally {

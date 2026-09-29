@@ -1,7 +1,7 @@
 # Code Judge — Phase 1 by hand
 
 Authentication has no automated tests yet, so this is the list to walk through
-before calling phase 1 finished, and again after anything in `backend/src/services/auth.service.js`
+before calling phase 1 finished, and again after anything in `backend/src/controllers/auth/`
 changes. It takes about ten minutes.
 
 Everything below is the behaviour described in [04-authentication.md](04-authentication.md).
