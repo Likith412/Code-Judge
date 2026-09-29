@@ -126,15 +126,15 @@ function App() {
       setUser(data.user);
    }, []);
 
-   // Ends every session, this one included, and bumps tokenVersion so tokens
-   // already handed out die at once.
+   // Ends every other session. This device stays signed in on a fresh token,
+   // because bumping tokenVersion killed the old one too.
    const signOutEverywhere = useCallback(async () => {
-      try {
-         await logoutEverywhere();
-      } finally {
-         setAccessToken(null);
-         setUser(null);
-      }
+      const data = await logoutEverywhere();
+
+      setAccessToken(data.accessToken);
+      setUser(data.user);
+
+      return data.signedOutCount;
    }, []);
 
    const signOut = useCallback(async () => {

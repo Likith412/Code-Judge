@@ -29,7 +29,7 @@ const {
    findGraceSession,
    revokeSessionRow,
    revokeFamily,
-   revokeAllForUser,
+   revokeOtherSessions,
    issueLink,
    consumeLink,
    hashPassword,
@@ -282,14 +282,36 @@ async function logout(req, res) {
 }
 
 async function logoutAll(req, res) {
-   await revokeAllForUser(req.user._id, "LOGOUT_ALL");
+   const current = await Session.findById(req.auth.sid).select("familyId");
 
-   // Kills every token already handed out, including the one used here.
-   await User.updateOne({ _id: req.user._id }, { $inc: { tokenVersion: 1 } });
+   const { signedOutCount, fresh } = await runTransaction(async (session) => {
+      const devices = await revokeOtherSessions(
+         req.user._id,
+         current?.familyId,
+         "LOGOUT_ALL",
+         session,
+      );
 
-   clearRefreshCookie(res);
+      // Kills every access token already handed out, this one included.
+      await User.updateOne(
+         { _id: req.user._id },
+         { $inc: { tokenVersion: 1 } },
+         { session },
+      );
 
-   res.json({ message: "Signed out on every device" });
+      return {
+         signedOutCount: devices,
+         fresh: await User.findById(req.user._id).session(session),
+      };
+   });
+
+   // This device keeps its session and its cookie, and gets a token that
+   // matches the new tokenVersion.
+   res.json({
+      accessToken: signAccessToken({ user: fresh, sessionId: req.auth.sid }),
+      user: publicUser(fresh),
+      signedOutCount,
+   });
 }
 
 /* ---- the account ------------------------------------------------------ */

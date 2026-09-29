@@ -354,6 +354,11 @@ One row per signed-in device: browser, OS, IP, last used. Remote sign-out per ro
 plus sign out everywhere. Mark the current device — signing yourself out by accident
 from this list is the obvious failure. Remember both device fields can be empty.
 
+**Sign out everywhere keeps this device.** It signs out every *other* device and
+leaves you where you are, so the copy must not promise a trip back to sign-in. The
+reply carries a new access token and a count, so the screen can say how many went.
+Disable the button when this is the only device.
+
 ---
 
 ## 9. Setter and admin

@@ -19,7 +19,7 @@ The rest of this document is about doing that one thing properly: how the tokens
 - Login with email and password
 - Forgot password by email link
 - Change password
-- Logout on this device, or on every device
+- Logout on this device, or on every **other** device
 - Three roles: `USER`, `SETTER`, `ADMIN`
 
 **Not included**
@@ -155,8 +155,9 @@ This is the most interesting part of the design and the best thing to talk about
 | Action                          | What happens                                                |
 | ------------------------------- | ----------------------------------------------------------- |
 | Logout (this device)            | This session becomes `REVOKED`, cookie cleared              |
-| Logout everywhere               | All sessions `REVOKED`, `tokenVersion` + 1                  |
-| Password change or reset        | Same as logout everywhere, and `passwordUpdatedAt` is set   |
+| Logout everywhere               | Every **other** session `REVOKED`, `tokenVersion` + 1, this device gets a new access token |
+| Password change                 | Same, and `passwordUpdatedAt` is set                        |
+| Password reset                  | All sessions `REVOKED`, this device included — you sign in again |
 | Reuse detected                  | Every session in that family `REVOKED`, audit log written   |
 | Ban                             | `status = BANNED`, `tokenVersion` + 1, all sessions revoked |
 | Remove one device from the list | Only that session `REVOKED`                                 |
@@ -164,6 +165,22 @@ This is the most interesting part of the design and the best thing to talk about
 An access token that is already out there keeps working for up to 10 more minutes — unless `tokenVersion` changed, which kills it right away. That is the trade: one cached database read per request in exchange for being able to cancel access instantly.
 
 Small detail on "logout on this device": it kills the refresh token at once, but the access token in that tab stays valid until it expires. React throws it away immediately, so nobody notices. If you want it dead on the server too, bump `tokenVersion` there as well — the price is that your other devices get logged out with it.
+
+**"Sign out everywhere" leaves this device alone.** It is the button you press when
+a laptop was stolen, so signing yourself out as well would be the wrong thing.
+Every other family is `REVOKED`, and `tokenVersion` goes up so their access tokens
+die on the spot rather than lasting another 10 minutes. That kills this device's
+token too, so the reply carries a fresh one:
+
+```json
+{ "accessToken": "...", "user": { ... }, "signedOutCount": 2 }
+```
+
+The session row and the refresh cookie are untouched, so the device list still
+shows the original sign-in time rather than pretending you just signed in.
+
+A **password reset** is the opposite and stays that way: every session goes, this
+one with it, because a reset is what you do when you are not sure who else is in.
 
 ---
 
@@ -299,7 +316,7 @@ The worker is a program, not a person, so it must never use a user token.
 | POST   | `/api/auth/login`               | —                         | email + password                               |
 | POST   | `/api/auth/refresh`             | cookie                    | rotate and get a new access token              |
 | POST   | `/api/auth/logout`              | cookie                    | log out this device                            |
-| POST   | `/api/auth/logout-all`          | access                    | log out everywhere                             |
+| POST   | `/api/auth/logout-all`          | access                    | log out every other device, returns a new token |
 | GET    | `/api/auth/me`                  | access                    | who am I                                       |
 | PATCH  | `/api/auth/me`                  | access                    | edit username, display name, bio               |
 | GET    | `/api/auth/sessions`            | access                    | device list                                    |

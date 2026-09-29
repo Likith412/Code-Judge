@@ -242,6 +242,19 @@ const DevicesTab = () => {
       };
    }, [reloadCount]);
 
+   const onClickSignOutEverywhere = async () => {
+      setProblem(null);
+
+      try {
+         await signOutEverywhere();
+         setConfirming(false);
+         setReloadCount((count) => count + 1);
+      } catch (error) {
+         setConfirming(false);
+         setProblem(error.message);
+      }
+   };
+
    const onClickRevoke = async (id) => {
       setProblem(null);
 
@@ -347,16 +360,14 @@ const DevicesTab = () => {
 
          {renderDevices()}
 
-         {/* Signing out everywhere takes this device with it, so it asks
-             first. */}
+         {/* Other people's devices, so it asks first. */}
          {confirming && (
             <div className="dialog-backdrop">
                <div className="dialog">
                   <div className="dialog-title">Sign out everywhere?</div>
 
                   <div className="dialog-body">
-                     Every device is signed out, including this one. You’ll land
-                     back at sign-in.
+                     Every other device is signed out. This one stays signed in.
                   </div>
 
                   <div className="dialog-actions">
@@ -371,7 +382,7 @@ const DevicesTab = () => {
                      <button
                         type="button"
                         className="btn btn-primary"
-                        onClick={signOutEverywhere}
+                        onClick={onClickSignOutEverywhere}
                      >
                         Sign out everywhere
                      </button>

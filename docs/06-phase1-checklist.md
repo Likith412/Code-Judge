@@ -111,7 +111,9 @@ docker exec -it code-judge-mongo mongosh code-judge
 |---------|--------|
 | Sign in on two browsers, open **Account** on both | Each device list shows both, and marks itself *this device* |
 | Sign out one row from the other browser | That browser is signed out on its next call |
-| *Sign out everywhere* | Both are signed out at once. `tokenVersion` went up, so the access tokens die immediately rather than in ten minutes |
+| *Sign out everywhere* from browser A | Browser B is out on its next call, and A **stays signed in**. `tokenVersion` went up, so B's access token dies at once rather than in ten minutes |
+| Reload A's device list afterwards | One row, marked *this device*, still showing the original sign-in time — A did not sign in again |
+| *Sign out everywhere* with only one device | The button is disabled, there is nothing to sign out |
 
 ## 7. Password change and reset
 

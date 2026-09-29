@@ -141,13 +141,35 @@ const revokeFamily = (familyId, reason) =>
       { status: "REVOKED", revokedReason: reason },
    );
 
-// Every login of one person: logout-all, password change.
+// Every login of one person: password change and reset.
 const revokeAllForUser = (userId, reason, session) =>
    Session.updateMany(
       { userId, status: { $ne: "REVOKED" } },
       { status: "REVOKED", revokedReason: reason },
       { session },
    );
+
+// Every login but the one asking. Counts families, not rows, because a refresh
+// leaves a ROTATED row behind and that is not another device.
+async function revokeOtherSessions(userId, keepFamilyId, reason, session) {
+   const filter = { userId, status: { $ne: "REVOKED" } };
+
+   if (keepFamilyId) filter.familyId = { $ne: keepFamilyId };
+
+   const families = await Session.distinct(
+      "familyId",
+      { ...filter, status: "ACTIVE" },
+      { session },
+   );
+
+   await Session.updateMany(
+      filter,
+      { status: "REVOKED", revokedReason: reason },
+      { session },
+   );
+
+   return families.length;
+}
 
 /* ---- email links ------------------------------------------------------ */
 
@@ -257,6 +279,7 @@ module.exports = {
    revokeSessionRow,
    revokeFamily,
    revokeAllForUser,
+   revokeOtherSessions,
 
    issueLink,
    consumeLink,
