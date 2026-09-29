@@ -11,6 +11,9 @@ const { runTransaction } = require("../../utils/transaction");
 const canSeeDrafts = (user) =>
    Boolean(user) && (user.role === "SETTER" || user.role === "ADMIN");
 
+// Only a USER submits code, so only a USER has progress to filter on.
+const canSolve = (user) => user?.role === "USER";
+
 // A setter owns what they wrote. An admin owns everything.
 const owns = (user, problem) =>
    user.role === "ADMIN" || String(problem.createdBy) === String(user._id);
@@ -142,8 +145,8 @@ function listFilter(query, user) {
 
    if (query.mine && user) filter.createdBy = user._id;
 
-   // None of these mean anything to someone who is not signed in.
-   if (user && query.progress) {
+   // Meaningless to a visitor, and to a setter who cannot submit at all.
+   if (canSolve(user) && query.progress) {
       const solved = user.solvedProblemIds || [];
 
       if (query.progress === "solved") filter._id = { $in: solved };
@@ -368,6 +371,7 @@ async function assertPublishable(problem) {
 
 module.exports = {
    canSeeDrafts,
+   canSolve,
    owns,
    problemCard,
    problemDetail,

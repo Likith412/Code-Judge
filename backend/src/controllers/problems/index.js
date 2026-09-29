@@ -5,6 +5,7 @@ const { recordAudit } = require("../../utils/audit");
 
 const {
    canSeeDrafts,
+   canSolve,
    owns,
    problemCard,
    problemDetail,
@@ -48,7 +49,7 @@ async function listProblems(req, res) {
    ]);
 
    const showDraftFields = canSeeDrafts(req.user);
-   const solved = req.user ? solvedSet(req.user) : null;
+   const solved = canSolve(req.user) ? solvedSet(req.user) : null;
 
    res.json({
       problems: rows.map((row) =>
@@ -82,7 +83,9 @@ async function getProblem(req, res) {
    if (!mayRead) throw ApiError.notFound("No such problem");
 
    const samples = await loadSamples(problem._id);
-   const solved = req.user ? solvedSet(req.user).has(String(problem._id)) : null;
+   const solved = canSolve(req.user)
+      ? solvedSet(req.user).has(String(problem._id))
+      : null;
 
    res.json({ problem: problemDetail(problem, samples, solved) });
 }
@@ -151,9 +154,8 @@ async function updateProblem(req, res) {
    });
 
    const samples = await loadSamples(problem._id);
-   const solved = solvedSet(req.user).has(String(problem._id));
 
-   res.json({ problem: problemDetail(problem, samples, solved) });
+   res.json({ problem: problemDetail(problem, samples) });
 }
 
 async function deleteProblem(req, res) {
