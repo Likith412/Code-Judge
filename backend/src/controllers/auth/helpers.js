@@ -8,6 +8,7 @@ const { User, Session, AuthToken } = require("../../models");
 const { ApiError } = require("../../utils/ApiError");
 const { randomToken, hashToken } = require("../../utils/tokens");
 const { recordAudit } = require("../../utils/audit");
+const { runTransaction } = require("../../utils/transaction");
 const { toMs } = require("../../utils/duration");
 const { parseUserAgent } = require("../../utils/userAgent");
 const { setRefreshCookie } = require("../../utils/cookies");
@@ -79,21 +80,34 @@ async function createSession(userId, req) {
 async function rotateSession(current, req) {
    const refreshToken = randomToken();
 
-   const session = await Session.create({
-      userId: current.userId,
-      familyId: current.familyId,
-      tokenHash: hashToken(refreshToken),
-      previousTokenHash: current.tokenHash,
-      status: "ACTIVE",
-      expiresAt: current.expiresAt,
-      // The login did not restart, it was only refreshed.
-      signedInAt: current.signedInAt,
-      lastUsedAt: new Date(),
-      ...clientInfo(req),
-   });
+   // Rotate the old token and create the new one atomically to prevent two live tokens.
+   const session = await runTransaction(async (active) => {
+      const [created] = await Session.create(
+         [
+            {
+               userId: current.userId,
+               familyId: current.familyId,
+               tokenHash: hashToken(refreshToken),
+               previousTokenHash: current.tokenHash,
+               status: "ACTIVE",
+               expiresAt: current.expiresAt,
+               // The login did not restart, it was only refreshed.
+               signedInAt: current.signedInAt,
+               lastUsedAt: new Date(),
+               ...clientInfo(req),
+            },
+         ],
+         { session: active },
+      );
 
-   current.status = "ROTATED";
-   await current.save();
+      await Session.updateOne(
+         { _id: current._id },
+         { status: "ROTATED" },
+         { session: active },
+      );
+
+      return created;
+   });
 
    return { session, refreshToken };
 }
@@ -128,33 +142,51 @@ const revokeFamily = (familyId, reason) =>
    );
 
 // Every login of one person: logout-all, password change.
-const revokeAllForUser = (userId, reason) =>
+const revokeAllForUser = (userId, reason, session) =>
    Session.updateMany(
       { userId, status: { $ne: "REVOKED" } },
       { status: "REVOKED", revokedReason: reason },
+      { session },
    );
 
 /* ---- email links ------------------------------------------------------ */
 
 // Only the newest link works: asking for a second one kills the first.
-async function issueLink({ userId, type, ttlMs, ip }) {
+async function issueLink({ userId, type, ttlMs, ip }, session) {
    const raw = randomToken();
 
-   await AuthToken.deleteMany({ userId, type, usedAt: null });
-   await AuthToken.create({
-      userId,
-      type,
-      tokenHash: hashToken(raw),
-      requestIp: ip,
-      expiresAt: new Date(Date.now() + ttlMs),
-   });
+   // Replace the old link atomically so a failure cannot leave the user without a working link.
+   const write = async (active) => {
+      await AuthToken.deleteMany(
+         { userId, type, usedAt: null },
+         { session: active },
+      );
+      await AuthToken.create(
+         [
+            {
+               userId,
+               type,
+               tokenHash: hashToken(raw),
+               requestIp: ip,
+               expiresAt: new Date(Date.now() + ttlMs),
+            },
+         ],
+         { session: active },
+      );
+   };
+
+   // Joins the caller's transaction when there is one, else runs in its own.
+   await (session ? write(session) : runTransaction(write));
 
    return raw;
 }
 
 // An expired link may already be deleted, so missing and expired look alike.
-async function consumeLink(raw, type) {
-   const token = await AuthToken.findOne({ tokenHash: hashToken(raw), type });
+async function consumeLink(raw, type, session) {
+   const token = await AuthToken.findOne({
+      tokenHash: hashToken(raw),
+      type,
+   }).session(session);
 
    if (!token) throw new ApiError("LINK_INVALID", "This link is not valid");
    if (token.usedAt)
@@ -162,13 +194,17 @@ async function consumeLink(raw, type) {
    if (token.expiresAt < new Date())
       throw new ApiError("LINK_EXPIRED", "This link has expired");
 
-   const user = await User.findById(token.userId);
+   const user = await User.findById(token.userId).session(session);
 
    if (!user || user.status === "DELETED")
       throw new ApiError("LINK_INVALID", "This link is not valid");
 
-   token.usedAt = new Date();
-   await token.save();
+   // updateOne, not save(), so a retried transaction writes it again.
+   await AuthToken.updateOne(
+      { _id: token._id },
+      { usedAt: new Date() },
+      { session },
+   );
 
    return user;
 }
@@ -178,17 +214,25 @@ async function consumeLink(raw, type) {
 const hashPassword = (plain) => bcrypt.hash(plain, BCRYPT_ROUNDS);
 
 // A new hash is not a password change until every old session is dead too.
-async function applyNewPassword(user, password, reason) {
-   await User.updateOne(
-      { _id: user._id },
-      {
-         passwordHash: await hashPassword(password),
-         passwordUpdatedAt: new Date(),
-         $inc: { tokenVersion: 1 },
-      },
-   );
+async function applyNewPassword(user, password, reason, session) {
+   // Hash before the transaction so retries do not repeat the slow bcrypt work.
+   const passwordHash = await hashPassword(password);
 
-   await revokeAllForUser(user._id, reason);
+   const write = async (active) => {
+      await User.updateOne(
+         { _id: user._id },
+         {
+            passwordHash,
+            passwordUpdatedAt: new Date(),
+            $inc: { tokenVersion: 1 },
+         },
+         { session: active },
+      );
+
+      await revokeAllForUser(user._id, reason, active);
+   };
+
+   await (session ? write(session) : runTransaction(write));
 }
 
 // Usernames are public, so a clash is a plain field error.

@@ -1,6 +1,6 @@
 const { z } = require("zod");
 
-const { objectId, boolQuery, noDuplicates } = require("./common");
+const { objectId, dropEmpty, boolQuery, noDuplicates } = require("./common");
 const { isSlug } = require("../utils/slug");
 const {
    LANGUAGES,
@@ -78,32 +78,37 @@ const memoryLimitMb = z.coerce
 
 /* ---- reading ---------------------------------------------------------- */
 
-const listProblemsQuerySchema = z.object({
-   page: z.coerce.number().int().min(1).default(1),
-   limit: z.coerce.number().int().min(1).max(50).default(20),
+const listProblemsQuerySchema = z.preprocess(
+   dropEmpty,
+   z.object({
+      page: z.coerce.number().int().min(1).default(1),
+      limit: z.coerce.number().int().min(1).max(50).default(20),
 
-   difficulty: difficulty.optional(),
+      difficulty: difficulty.optional(),
 
-   // One tag or several: ?tags=array,hash-table
-   tags: z
-      .string()
-      .trim()
-      .transform((value) =>
-         value
-            .split(",")
-            .map((tag) => tag.trim().toLowerCase())
-            .filter(Boolean),
-      )
-      .optional(),
+      // One tag or several: ?tags=array,hash-table
+      tags: z
+         .string()
+         .trim()
+         .transform((value) =>
+            value
+               .split(",")
+               .map((tag) => tag.trim().toLowerCase())
+               .filter(Boolean),
+         )
+         .optional(),
 
-   q: z.string().trim().min(2, "At least 2 characters").max(60).optional(),
+      q: z.string().trim().min(2, "At least 2 characters").max(60).optional(),
 
-   // Only a setter or admin may ask for anything but PUBLISHED.
-   status: z.enum(["PUBLISHED", "DRAFT", "ALL"]).default("PUBLISHED"),
-   mine: boolQuery,
+      // Only a setter or admin may ask for anything but PUBLISHED.
+      status: z.enum(["PUBLISHED", "DRAFT", "ALL"]).default("PUBLISHED"),
+      mine: boolQuery,
 
-   sort: z.enum(["NEWEST", "OLDEST", "TITLE", "DIFFICULTY"]).default("NEWEST"),
-});
+      sort: z
+         .enum(["NEWEST", "OLDEST", "TITLE", "DIFFICULTY"])
+         .default("NEWEST"),
+   }),
+);
 
 const problemSlugSchema = z.object({ slug });
 const problemIdSchema = z.object({ id: objectId("Not a problem id") });
@@ -166,7 +171,6 @@ const createTestCaseSchema = z.object({
    isHidden: z.boolean().optional(),
    explanation: z.string().trim().max(500).optional(),
    weight: z.coerce.number().min(0).max(100).optional(),
-   order: z.coerce.number().int().min(1).optional(),
 });
 
 const updateTestCaseSchema = z
@@ -180,7 +184,6 @@ const updateTestCaseSchema = z
       isHidden: z.boolean().optional(),
       explanation: z.string().trim().max(500).optional(),
       weight: z.coerce.number().min(0).max(100).optional(),
-      order: z.coerce.number().int().min(1).optional(),
    })
    .refine((value) => Object.keys(value).length > 0, "Nothing to change");
 

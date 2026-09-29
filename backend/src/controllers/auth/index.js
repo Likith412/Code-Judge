@@ -10,6 +10,7 @@ const { User, Session } = require("../../models");
 const { ApiError } = require("../../utils/ApiError");
 const { signAccessToken } = require("../../utils/accessToken");
 const { hashToken } = require("../../utils/tokens");
+const { runTransaction } = require("../../utils/transaction");
 const {
    clearRefreshCookie,
    readRefreshCookie,
@@ -53,19 +54,31 @@ async function register(req, res) {
       return res.status(201).json(VAGUE_REPLY);
    }
 
-   const user = await User.create({
-      username,
-      email,
-      passwordHash: await hashPassword(password),
+   const passwordHash = await hashPassword(password);
+
+   // The account and its link land together: an account with no link cannot be
+   // confirmed, and a link with no account points at nothing.
+   const { user, raw } = await runTransaction(async (session) => {
+      const [created] = await User.create([{ username, email, passwordHash }], {
+         session,
+      });
+
+      return {
+         user: created,
+         raw: await issueLink(
+            {
+               userId: created._id,
+               type: "EMAIL_VERIFY",
+               ttlMs: VERIFY_TTL_MS,
+               ip,
+            },
+            session,
+         ),
+      };
    });
 
-   const raw = await issueLink({
-      userId: user._id,
-      type: "EMAIL_VERIFY",
-      ttlMs: VERIFY_TTL_MS,
-      ip,
-   });
-
+   // Sent after the commit, never inside: a retried transaction runs its body
+   // again, and an email cannot be taken back.
    await sendVerificationEmail({ to: user.email, token: raw });
 
    res.status(201).json(VAGUE_REPLY);
@@ -89,12 +102,23 @@ async function resendVerification(req, res) {
 }
 
 async function verify(req, res) {
-   const user = await consumeLink(req.valid.query.token, "EMAIL_VERIFY");
+   // One step. Spending the link without confirming the address would leave the
+   // account unverified and the only link already used.
+   await runTransaction(async (session) => {
+      const user = await consumeLink(
+         req.valid.query.token,
+         "EMAIL_VERIFY",
+         session,
+      );
 
-   if (!user.emailVerified) {
-      user.emailVerified = true;
-      await user.save();
-   }
+      if (!user.emailVerified) {
+         await User.updateOne(
+            { _id: user._id },
+            { emailVerified: true },
+            { session },
+         );
+      }
+   });
 
    res.json({ status: "verified" });
 }
@@ -366,13 +390,24 @@ async function forgotPassword(req, res) {
 async function resetPassword(req, res) {
    const { token, password } = req.valid.body;
 
-   const user = await consumeLink(token, "PASSWORD_RESET");
+   // Link spent, password changed, old sessions dead, address confirmed. Half
+   // of that done is either a hole or a locked out account.
+   const user = await runTransaction(async (session) => {
+      const found = await consumeLink(token, "PASSWORD_RESET", session);
 
-   await applyNewPassword(user, password, "PASSWORD_CHANGE");
+      await applyNewPassword(found, password, "PASSWORD_CHANGE", session);
 
-   // Reaching the inbox proves the email, so it counts as confirming it.
-   if (!user.emailVerified)
-      await User.updateOne({ _id: user._id }, { emailVerified: true });
+      // Reaching the inbox proves the email, so it counts as confirming it.
+      if (!found.emailVerified) {
+         await User.updateOne(
+            { _id: found._id },
+            { emailVerified: true },
+            { session },
+         );
+      }
+
+      return found;
+   });
 
    await recordAudit({
       actorId: user._id,

@@ -16,12 +16,18 @@ Code-Judge/
 └── idea.md
 ```
 
-MongoDB runs in Docker. From the repo root:
+MongoDB runs in Docker, as a **one-member replica set** rather than standalone,
+because that is the only way MongoDB offers transactions. From the repo root:
 
 ```
-docker compose up -d      # start MongoDB
-docker compose down       # stop it, keep the data
+docker compose up -d           # start MongoDB
+docker compose up mongo-init   # start its replica set, first time only
+docker compose down            # stop it, keep the data
 ```
+
+`mongo-init` runs once and exits; running it again says the replica set is
+already going. One member gives no redundancy, which is fine for a development
+database — it is there for transactions, not for failover.
 
 ---
 

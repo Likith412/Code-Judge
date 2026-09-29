@@ -17,9 +17,9 @@ const {
    pickSlug,
    assertSlugFree,
    isDuplicateKey,
-   syncTestCaseCount,
-   nextOrder,
-   assertCaseRemains,
+   insertTestCase,
+   removeTestCase,
+   removeProblem,
    assertSampleRemains,
    assertPublishable,
 } = require("./helpers");
@@ -146,8 +146,8 @@ async function deleteProblem(req, res) {
       throw ApiError.badRequest("Unpublish the problem before deleting it");
    }
 
-   await TestCase.deleteMany({ problemId: problem._id });
-   await problem.deleteOne();
+   // One transaction: the problem never loses its cases without going itself.
+   await removeProblem(problem);
 
    await recordAudit({
       actorId: req.user._id,
@@ -176,13 +176,7 @@ async function addTestCase(req, res) {
    const body = req.valid.body;
    const problem = await loadOwnProblem(req.valid.params.id, req.user);
 
-   const testCase = await TestCase.create({
-      ...body,
-      problemId: problem._id,
-      order: body.order || (await nextOrder(problem._id)),
-   });
-
-   const testCaseCount = await syncTestCaseCount(problem._id);
+   const { testCase, testCaseCount } = await insertTestCase(problem._id, body);
 
    res.status(201).json({ testCase: fullCase(testCase), testCaseCount });
 }
@@ -209,12 +203,7 @@ async function deleteTestCase(req, res) {
       req.user,
    );
 
-   assertCaseRemains(problem);
-   await assertSampleRemains(problem, testCase);
-
-   await testCase.deleteOne();
-
-   const testCaseCount = await syncTestCaseCount(problem._id);
+   const testCaseCount = await removeTestCase(problem, testCase);
 
    await recordAudit({
       actorId: req.user._id,

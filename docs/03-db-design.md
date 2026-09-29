@@ -261,7 +261,7 @@ Kept apart from the problem so hidden cases never leak in a problem response, an
 |-------|------|----------|-------|
 | `_id` | ObjectId | yes | |
 | `problemId` | ObjectId → `problems` | yes | |
-| `order` | Number | yes | run order, starts at 1 |
+| `order` | Number | yes | run order, starts at 1. Chosen by the server, never sent by the client. Unique per problem |
 | `input` | String | no | exactly what goes to stdin. May be empty: a program need not read any |
 | `expectedOutput` | String | yes | never empty, that is nearly always a half-filled form |
 | `isHidden` | Boolean | yes | `false` = sample, used by the Run button |
@@ -286,7 +286,7 @@ Kept apart from the problem so hidden cases never leak in a problem response, an
 
 **Indexes**
 
-- `{ problemId: 1, order: 1 }`
+- `{ problemId: 1, order: 1 }` unique — two cases must never share a run order
 - `{ problemId: 1, isHidden: 1 }`
 
 ---

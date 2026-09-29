@@ -1,17 +1,19 @@
-# The stateful parts of the stack, for development.
+# The stateful parts of the stack, for development. The API and the web app run
+# on the host with npm run dev; phase 11 adds them here.
 #
-#   docker compose up -d      start MongoDB
-#   docker compose down       stop it, keep the data
-#   docker compose down -v    stop it and throw the data away
-#
-# The API and the web app still run on the host with npm run dev. Phase 11
-# adds api, worker and web services to this file.
+#   docker compose up -d           start MongoDB
+#   docker compose up mongo-init   start its replica set, first time only
+#   docker compose down            stop it, keep the data
+#   docker compose down -v         stop it and throw the data away
 
 services:
    mongo:
       image: mongo:8
       container_name: code-judge-mongo
       restart: unless-stopped
+      # One member, for transactions rather than failover. Standalone Mongo has
+      # no transactions, and the API needs them to delete a problem cleanly.
+      command: ["--replSet", "rs0", "--bind_ip_all"]
       ports:
          - "27017:27017"
       volumes:
@@ -21,6 +23,29 @@ services:
          interval: 10s
          timeout: 5s
          retries: 5
+
+   # Runs once and exits. Already going, and it does nothing.
+   mongo-init:
+      image: mongo:8
+      container_name: code-judge-mongo-init
+      depends_on:
+         mongo:
+            condition: service_healthy
+      restart: "no"
+      command:
+         - mongosh
+         - --host
+         - mongo:27017
+         - --quiet
+         - --eval
+         - |
+           try {
+              rs.status();
+              print("replica set rs0 is already running");
+           } catch (err) {
+              rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "mongo:27017" }] });
+              print("replica set rs0 started");
+           }
    redis:
       image: redis:8-alpine
       container_name: code-judge-redis

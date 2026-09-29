@@ -30,7 +30,8 @@ const testCaseSchema = new Schema(
    { timestamps: true },
 );
 
-testCaseSchema.index({ problemId: 1, order: 1 });
+// Unique, so two adds at the same moment cannot both take the same number.
+testCaseSchema.index({ problemId: 1, order: 1 }, { unique: true });
 testCaseSchema.index({ problemId: 1, isHidden: 1 });
 
 module.exports = model("TestCase", testCaseSchema);

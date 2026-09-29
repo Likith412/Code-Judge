@@ -1,17 +1,13 @@
-// The two accounts a fresh database needs: one to own the seeded problems, and
-// one setter to try the ownership rules against. They have a known password, so
-// this refuses to run in production.
+// The two accounts a fresh database needs: an owner for the seeded problems and
+// a setter to try the ownership rules. Known password, so never in production.
 require("dotenv").config();
 
 const bcrypt = require("bcrypt");
 
-const { NODE_ENV, BCRYPT_ROUNDS } = require("../config/env");
+const { NODE_ENV, BCRYPT_ROUNDS, SEED_PASSWORD } = require("../config/env");
 const { connectDatabase, disconnectDatabase } = require("../config/db");
 const logger = require("../config/logger");
 const { User } = require("../models");
-
-// Set SEED_PASSWORD in .env to use something else.
-const SEED_PASSWORD = process.env.SEED_PASSWORD || "codejudge-dev-pass";
 
 // .test can never be a real domain, so no mail can leave by accident.
 const ACCOUNTS = [
@@ -54,7 +50,9 @@ async function seedUsers() {
 
       accounts[user.role] = user;
       createdAny = createdAny || created;
-      logger.info(`  ${created ? "created" : "kept"} ${user.role} ${user.email}`);
+      logger.info(
+         `  ${created ? "created" : "kept"} ${user.role} ${user.email}`,
+      );
    }
 
    if (createdAny) logger.info(`  password for both: ${SEED_PASSWORD}`);

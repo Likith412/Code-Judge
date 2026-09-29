@@ -76,11 +76,8 @@ const AccountTab = () => {
 
             <div className="settings-static">
                {user.email}
-               {user.emailVerified ? (
-                  <span className="tag tag-neutral">Verified</span>
-               ) : (
-                  <span className="tag tag-outline">Not verified</span>
-               )}
+               {/* Always verified: an unverified account cannot sign in. */}
+               <span className="tag tag-neutral">Verified</span>
             </div>
 
             <div className="field-hint">

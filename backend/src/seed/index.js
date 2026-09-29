@@ -6,6 +6,7 @@ const { connectDatabase, disconnectDatabase } = require("../config/db");
 const logger = require("../config/logger");
 const { User, Problem, TestCase } = require("../models");
 const { slugify } = require("../utils/slug");
+const { runTransaction } = require("../utils/transaction");
 const { seedUsers } = require("./users");
 const problems = require("./problems");
 
@@ -20,7 +21,8 @@ async function findAuthor() {
       (await User.findOne({ role: "ADMIN" }).sort({ createdAt: 1 })) ||
       (await User.findOne({ role: "SETTER" }).sort({ createdAt: 1 }));
 
-   if (!author) throw new Error("No admin or setter account to write problems as");
+   if (!author)
+      throw new Error("No admin or setter account to write problems as");
 
    return author;
 }
@@ -31,29 +33,39 @@ async function writeProblem(spec, authorId) {
 
    if (existing && !replace) return "kept";
 
-   // This only ever removes a problem whose slug is in ./problems.js.
-   if (existing) {
-      await TestCase.deleteMany({ problemId: existing._id });
-      await existing.deleteOne();
-   }
-
    const { testCases, ...fields } = spec;
 
-   const problem = await Problem.create({
-      ...fields,
-      slug,
-      createdBy: authorId,
-      isPublished: true,
-      testCaseCount: testCases.length,
-   });
+   // One transaction for the lot, so --replace can never drop a problem and
+   // then fail before writing the new one back.
+   await runTransaction(async (session) => {
+      // This only ever removes a problem whose slug is in ./problems.js.
+      if (existing) {
+         await TestCase.deleteMany({ problemId: existing._id }, { session });
+         await existing.deleteOne({ session });
+      }
 
-   await TestCase.insertMany(
-      testCases.map((testCase, index) => ({
-         ...testCase,
-         problemId: problem._id,
-         order: index + 1,
-      })),
-   );
+      const [problem] = await Problem.create(
+         [
+            {
+               ...fields,
+               slug,
+               createdBy: authorId,
+               isPublished: true,
+               testCaseCount: testCases.length,
+            },
+         ],
+         { session },
+      );
+
+      await TestCase.insertMany(
+         testCases.map((testCase, index) => ({
+            ...testCase,
+            problemId: problem._id,
+            order: index + 1,
+         })),
+         { session },
+      );
+   });
 
    return existing ? "replaced" : "created";
 }

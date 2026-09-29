@@ -183,6 +183,30 @@ Sensitive actions — change password, delete account — always ask for the **c
 
 ---
 
+## 7a. What runs in a transaction
+
+Mongo runs as a one-member replica set, so transactions are available. Four auth
+steps write to more than one place and would leave something broken if only half
+of it landed:
+
+| Step | Writes | Half done would mean |
+|------|--------|----------------------|
+| `register` | the user row, and its verification link | an account nobody can confirm, or a link pointing at nothing |
+| `verify` | the link marked used, and `emailVerified` | a spent link on an account still unverified, with no way back |
+| `reset-password` | the link, the new hash, `tokenVersion`, every session revoked | a new password with the old sessions still alive, which is a hole |
+| `refresh` (`rotateSession`) | the new session row, the old one marked `ROTATED` | two live refresh tokens, or being signed out mid-refresh |
+
+Two rules the code follows inside a transaction, both because MongoDB may run the
+body again after a transient error:
+
+- **Nothing the database cannot undo.** The verification email is sent after the
+  commit, never inside, or a retry would send it twice. bcrypt runs before the
+  transaction opens, so a retry does not pay for it again.
+- **`updateOne`, not `save()`.** A document already changed in memory has no
+  modified paths left on the second run, so `save()` would quietly write nothing.
+
+---
+
 ## 8. Who can do what
 
 | Permission                           | USER |    SETTER    | ADMIN |

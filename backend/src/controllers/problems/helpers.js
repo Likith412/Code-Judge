@@ -2,6 +2,7 @@
 const { Problem, TestCase } = require("../../models");
 const { ApiError } = require("../../utils/ApiError");
 const { slugify } = require("../../utils/slug");
+const { runTransaction } = require("../../utils/transaction");
 
 /* ---- who is allowed to see and do what -------------------------------- */
 
@@ -190,29 +191,96 @@ const isDuplicateKey = (err) => Boolean(err) && err.code === 11000;
 /* ---- test case bookkeeping -------------------------------------------- */
 
 // Copy the real count onto the problem, so the list page needs no join.
-async function syncTestCaseCount(problemId) {
-   const count = await TestCase.countDocuments({ problemId });
+async function syncTestCaseCount(problemId, session) {
+   const count = await TestCase.countDocuments({ problemId }, { session });
 
    await Problem.updateOne(
       { _id: problemId },
       { $set: { testCaseCount: count } },
+      { session },
    );
 
    return count;
 }
 
 // New cases go last. Gaps left by a delete are fine, only the order matters.
-async function nextOrder(problemId) {
+async function nextOrder(problemId, session) {
    const last = await TestCase.findOne({ problemId })
+      .session(session)
       .sort({ order: -1 })
       .select("order");
 
    return last ? last.order + 1 : 1;
 }
 
-// A published problem must keep something to judge with.
-function assertCaseRemains(problem) {
-   if (problem.isPublished && problem.testCaseCount <= 1) {
+// Two adds at once can pick the same number, and the unique index refuses the
+// loser. Each round lets one through, so the cap beats any real contention.
+const ORDER_ATTEMPTS = 25;
+
+// The retry is outside the transaction: a clash aborts it, so the next try
+// needs a new one. The row and the count move together.
+async function insertTestCase(problemId, fields) {
+   for (let attempt = 1; attempt <= ORDER_ATTEMPTS; attempt += 1) {
+      try {
+         return await runTransaction(async (session) => {
+            const [testCase] = await TestCase.create(
+               [
+                  {
+                     ...fields,
+                     problemId,
+                     order: await nextOrder(problemId, session),
+                  },
+               ],
+               { session },
+            );
+
+            return {
+               testCase,
+               testCaseCount: await syncTestCaseCount(problemId, session),
+            };
+         });
+      } catch (err) {
+         // Anything but a clash on the order is a real failure.
+         if (!isDuplicateKey(err)) throw err;
+      }
+   }
+
+   // Never a 500: the caller is told plainly to send it again.
+   throw ApiError.conflict("Could not pick a run order, please try again");
+}
+
+// Removes the case and fixes the count in one step, guards included, so a
+// second delete arriving at the same moment cannot slip past them.
+async function removeTestCase(problem, testCase) {
+   return runTransaction(async (session) => {
+      await assertCaseRemains(problem, session);
+      await assertSampleRemains(problem, testCase, session);
+
+      await testCase.deleteOne({ session });
+
+      return syncTestCaseCount(problem._id, session);
+   });
+}
+
+// The problem and every case it owns go together, or neither goes.
+async function removeProblem(problem) {
+   await runTransaction(async (session) => {
+      await TestCase.deleteMany({ problemId: problem._id }, { session });
+      await problem.deleteOne({ session });
+   });
+}
+
+// A published problem must keep something to judge with. Counted live, not read
+// off problem.testCaseCount, so a copy that has drifted cannot weaken the rule.
+async function assertCaseRemains(problem, session) {
+   if (!problem.isPublished) return;
+
+   const total = await TestCase.countDocuments(
+      { problemId: problem._id },
+      { session },
+   );
+
+   if (total <= 1) {
       throw ApiError.badRequest(
          "A published problem needs at least one test case",
       );
@@ -220,13 +288,13 @@ function assertCaseRemains(problem) {
 }
 
 // And it must keep one sample, or the Run button has nothing to run.
-async function assertSampleRemains(problem, testCase) {
+async function assertSampleRemains(problem, testCase, session) {
    if (!problem.isPublished || testCase.isHidden) return;
 
-   const samples = await TestCase.countDocuments({
-      problemId: problem._id,
-      isHidden: false,
-   });
+   const samples = await TestCase.countDocuments(
+      { problemId: problem._id, isHidden: false },
+      { session },
+   );
 
    if (samples <= 1) {
       throw ApiError.badRequest(
@@ -272,6 +340,9 @@ module.exports = {
    isDuplicateKey,
    syncTestCaseCount,
    nextOrder,
+   insertTestCase,
+   removeTestCase,
+   removeProblem,
    assertCaseRemains,
    assertSampleRemains,
    assertPublishable,

@@ -5,14 +5,33 @@ const { isValidObjectId } = require("mongoose");
 const objectId = (message) =>
    z
       .string()
-      .refine((value) => value.length === 24 && isValidObjectId(value), message);
+      .refine(
+         (value) => value.length === 24 && isValidObjectId(value),
+         message,
+      );
 
-// Query strings only ever carry text, so "true" is the only yes.
+// Drop empty fields so optional/default values work and clearing a search box is allowed.
+const dropEmpty = (value) => {
+   if (value === null || typeof value !== "object") return value;
+
+   const kept = {};
+
+   for (const [key, item] of Object.entries(value)) {
+      if (typeof item === "string" && item.trim() === "") continue;
+
+      kept[key] = item;
+   }
+
+   return kept;
+};
+
+// A query string only ever carries text. Checkboxes send 1 and 0, links send
+// true and false, so take both.
 const boolQuery = z
-   .enum(["true", "false"])
+   .enum(["true", "false", "1", "0"])
    .optional()
-   .transform((value) => value === "true");
+   .transform((value) => value === "true" || value === "1");
 
 const noDuplicates = (list) => new Set(list).size === list.length;
 
-module.exports = { objectId, boolQuery, noDuplicates };
+module.exports = { objectId, dropEmpty, boolQuery, noDuplicates };
