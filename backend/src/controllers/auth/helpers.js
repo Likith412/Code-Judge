@@ -149,8 +149,7 @@ const revokeAllForUser = (userId, reason, session) =>
       { session },
    );
 
-// Every login but the one asking. Counts families, not rows, because a refresh
-// leaves a ROTATED row behind and that is not another device.
+// Every login but the one asking. Counts families, since rotated rows are not devices.
 async function revokeOtherSessions(userId, keepFamilyId, reason, session) {
    const filter = { userId, status: { $ne: "REVOKED" } };
 

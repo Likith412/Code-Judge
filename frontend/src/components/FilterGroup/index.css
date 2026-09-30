@@ -1,0 +1,53 @@
+.filter-group-label {
+   margin-bottom: var(--space-2);
+   font-size: 11px;
+   letter-spacing: 0.1em;
+   text-transform: uppercase;
+   color: var(--color-neutral-700);
+}
+
+.filter-group-list {
+   display: flex;
+   flex-direction: column;
+   border-top: 1px solid var(--color-divider);
+}
+
+.filter-group-button {
+   padding: 8px 10px;
+   border: 0;
+   border-bottom: 1px solid var(--color-divider);
+   background: none;
+   font: inherit;
+   font-size: 14px;
+   text-align: left;
+   color: var(--color-text);
+   cursor: pointer;
+}
+
+.filter-group-button:hover {
+   background: var(--color-neutral-200);
+}
+
+.filter-group-button-on {
+   background: var(--color-text);
+   color: var(--color-bg);
+   font-weight: 600;
+}
+
+/* Restated, or the :hover above strips the fill and hides the label. */
+.filter-group-button-on:hover {
+   background: var(--color-text);
+}
+
+/* A row across the top rather than a column beside. */
+@media (max-width: 760px) {
+   .filter-group-list {
+      flex-direction: row;
+      border-top: 0;
+      border-bottom: 1px solid var(--color-divider);
+   }
+
+   .filter-group-button {
+      border-bottom: 0;
+   }
+}

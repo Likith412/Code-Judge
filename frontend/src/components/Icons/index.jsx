@@ -28,4 +28,20 @@ const EyeOffIcon = () => (
    </svg>
 );
 
-export { EyeIcon, EyeOffIcon };
+// The solved tick on a problem row. Sized by whatever wraps it.
+const CheckIcon = (props) => (
+   <svg
+      width={props.size || 16}
+      height={props.size || 16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+   >
+      <path d="M20 6 9 17l-5-5" />
+   </svg>
+);
+
+export { EyeIcon, EyeOffIcon, CheckIcon };

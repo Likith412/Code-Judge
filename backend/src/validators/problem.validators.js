@@ -133,8 +133,7 @@ const testCaseParamsSchema = z.object({
 
 /* ---- writing a problem ------------------------------------------------ */
 
-// A new problem is always a draft. Publishing happens through PATCH, which
-// checks there is at least one test case first.
+// A new problem is always a draft; publishing is a PATCH, which has checks.
 const createProblemSchema = z.object({
    title,
    slug: slug.optional(),
@@ -172,8 +171,7 @@ const updateProblemSchema = z
 
 /* ---- writing a test case --------------------------------------------- */
 
-// An empty input is fine, a program need not read stdin. An empty expected
-// output almost always means the case was filled in wrong.
+// Empty input is fine, empty expected output is nearly always a mistake.
 const createTestCaseSchema = z.object({
    input: z.string().max(MAX_CASE_CHARS, "The input is too big"),
    expectedOutput: z

@@ -1,5 +1,4 @@
-// The problems the seed script writes. Everything reads stdin and writes
-// stdout, because that is all the judge in phase 4 knows how to do.
+// The starter problems. All stdin to stdout, which is all the phase 4 judge does.
 
 // Every problem opens with the same skeleton plus one line of its own.
 const starter = (hint) => ({

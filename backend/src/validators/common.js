@@ -25,8 +25,7 @@ const dropEmpty = (value) => {
    return kept;
 };
 
-// A query string only ever carries text. Checkboxes send 1 and 0, links send
-// true and false, so take both.
+// A query string only carries text, so take 1 and 0 as well as true and false.
 const boolQuery = z
    .enum(["true", "false", "1", "0"])
    .optional()

@@ -41,8 +41,7 @@ const starterFor = (problem) =>
 const solvedSet = (user) =>
    new Set((user?.solvedProblemIds || []).map((id) => String(id)));
 
-// Problems this person has submitted to. Empty until phase 4 fills it from
-// submissions, so "tried" matches nothing yet.
+// Problems submitted to. Empty until phase 4, so "tried" matches nothing yet.
 const attemptedIds = () => [];
 
 // One row in the list. Draft fields are added only for a setter or admin.
@@ -259,12 +258,10 @@ async function nextOrder(problemId, session) {
    return last ? last.order + 1 : 1;
 }
 
-// Two adds at once can pick the same number, and the unique index refuses the
-// loser. Each round lets one through, so the cap beats any real contention.
+// Two adds at once can pick the same number; the unique index refuses the loser.
 const ORDER_ATTEMPTS = 25;
 
-// The retry is outside the transaction: a clash aborts it, so the next try
-// needs a new one. The row and the count move together.
+// The retry sits outside, because a clash aborts the whole transaction.
 async function insertTestCase(problemId, fields) {
    for (let attempt = 1; attempt <= ORDER_ATTEMPTS; attempt += 1) {
       try {
@@ -295,8 +292,7 @@ async function insertTestCase(problemId, fields) {
    throw ApiError.conflict("Could not pick a run order, please try again");
 }
 
-// Removes the case and fixes the count in one step, guards included, so a
-// second delete arriving at the same moment cannot slip past them.
+// Case, count and guards in one step, so a second delete cannot slip past.
 async function removeTestCase(problem, testCase) {
    return runTransaction(async (session) => {
       await assertCaseRemains(problem, session);
@@ -316,8 +312,7 @@ async function removeProblem(problem) {
    });
 }
 
-// A published problem must keep something to judge with. Counted live, not read
-// off problem.testCaseCount, so a copy that has drifted cannot weaken the rule.
+// A published problem keeps something to judge with. Counted live, never copied.
 async function assertCaseRemains(problem, session) {
    if (!problem.isPublished) return;
 

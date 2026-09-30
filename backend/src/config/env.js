@@ -23,8 +23,7 @@ const schema = z.object({
    SMTP_URL: z.string().min(1),
    MAIL_FROM: z.string().min(1),
 
-   // Only the seed reads this. A default is fine: seeding accounts refuses to
-   // run when NODE_ENV is production.
+   // Only the seed reads this, and it refuses to run in production.
    SEED_PASSWORD: z.string().min(10).default("codejudge-dev-pass"),
 });
 

@@ -1,0 +1,111 @@
+/* Sizes here come from design/Code Judge.dc.html, the PROBLEM LIST block. */
+
+.problems-header {
+   display: flex;
+   align-items: flex-end;
+   justify-content: space-between;
+   gap: var(--space-4);
+   flex-wrap: wrap;
+   padding-bottom: var(--space-4);
+   border-bottom: 2px solid var(--color-divider);
+}
+
+/* The controls take whatever the heading leaves. */
+.problems-header > .problems-tools {
+   flex: 1 1 auto;
+}
+
+/* Never grows, so every spare pixel goes to the controls beside it. */
+.problems-heading {
+   flex: 0 0 auto;
+}
+
+.problems-title {
+   margin: 0 0 var(--space-1);
+   font-size: 32px;
+}
+
+.problems-count {
+   font-size: 13px;
+   color: var(--color-neutral-700);
+}
+
+/* Packed to the right, so a row that wraps still ends flush with the rule. */
+.problems-tools {
+   display: flex;
+   align-items: center;
+   justify-content: flex-end;
+   gap: var(--space-2);
+   flex-wrap: wrap;
+}
+
+.problems-search {
+   flex: 1 1 240px;
+   min-width: 0;
+   max-width: 380px;
+}
+
+.problems-sort {
+   width: 150px;
+}
+
+/* 190px rail, from listGridStyle in the design file. */
+.problems-layout {
+   display: grid;
+   grid-template-columns: 190px minmax(0, 1fr);
+   gap: 0 var(--space-8);
+   align-items: start;
+}
+
+.problems-list {
+   min-width: 0;
+}
+
+.problems-loading {
+   padding: var(--space-8) 0;
+   color: var(--color-neutral-700);
+}
+
+/* ---- nothing matched --------------------------------------------------- */
+
+.problems-empty {
+   padding: 48px 0;
+   border-bottom: 1px solid var(--color-divider);
+}
+
+.problems-empty-title {
+   margin-bottom: 6px;
+   font-family: var(--font-heading);
+   font-weight: 800;
+   font-size: 20px;
+}
+
+.problems-empty-reason {
+   margin-bottom: 14px;
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}
+
+/* ---- tablet ------------------------------------------------------------ */
+
+@media (max-width: 760px) {
+   .problems-layout {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-6);
+   }
+}
+
+/* ---- phone ------------------------------------------------------------- */
+
+@media (max-width: 640px) {
+   /* The two stack and each takes the row. */
+   .problems-tools {
+      width: 100%;
+   }
+
+   .problems-search,
+   .problems-sort {
+      width: 100%;
+      max-width: none;
+   }
+}

@@ -42,11 +42,16 @@ const VerifyPage = () => {
    useEffect(() => {
       if (!token) return;
 
-      verifyEmail(token)
-         .then(() => setOutcome(OUTCOMES.verified))
-         .catch((error) =>
-            setOutcome(OUTCOMES[apiError(error).code] || OUTCOMES.LINK_INVALID),
-         );
+      const confirm = async () => {
+         try {
+            await verifyEmail(token);
+            setOutcome(OUTCOMES.verified);
+         } catch (error) {
+            setOutcome(OUTCOMES[apiError(error).code] || OUTCOMES.LINK_INVALID);
+         }
+      };
+
+      confirm();
    }, [token]);
 
    if (!outcome) {

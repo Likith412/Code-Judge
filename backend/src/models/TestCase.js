@@ -1,7 +1,6 @@
 const { Schema, model } = require("mongoose");
 
-// One row per test case. Kept apart from the problem so a hidden case can
-// never leak through a problem response by mistake.
+// One row per case, kept apart so a hidden one cannot leak through a problem.
 const testCaseSchema = new Schema(
    {
       problemId: {
@@ -13,8 +12,7 @@ const testCaseSchema = new Schema(
       // Run order, starts at 1. Gaps after a delete are fine.
       order: { type: Number, required: true, min: 1 },
 
-      // A program need not read stdin, so an empty input is allowed. An
-      // empty expected output is not: it is nearly always a mistake.
+      // Empty input is fine, empty expected output is nearly always a mistake.
       input: { type: String, default: "" },
       expectedOutput: { type: String, required: true },
 

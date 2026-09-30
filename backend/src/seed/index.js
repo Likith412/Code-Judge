@@ -1,5 +1,4 @@
-// Writes the starter problems. Safe to run twice: a slug that is already
-// there is left alone, unless you pass --replace.
+// Writes the starter problems. Run twice and a slug already there is kept.
 require("dotenv").config();
 
 const { connectDatabase, disconnectDatabase } = require("../config/db");
@@ -12,8 +11,7 @@ const problems = require("./problems");
 
 const replace = process.argv.includes("--replace");
 
-// Problems need an author. Makes the dev accounts first, then picks the oldest
-// admin, so an account you already had keeps its problems on a re-seed.
+// Makes the dev accounts, then authors as the oldest admin, so re-seeding keeps owners.
 async function findAuthor() {
    await seedUsers();
 
@@ -35,8 +33,7 @@ async function writeProblem(spec, authorId) {
 
    const { testCases, ...fields } = spec;
 
-   // One transaction for the lot, so --replace can never drop a problem and
-   // then fail before writing the new one back.
+   // One transaction, so --replace cannot drop a problem and fail to rewrite it.
    await runTransaction(async (session) => {
       // This only ever removes a problem whose slug is in ./problems.js.
       if (existing) {

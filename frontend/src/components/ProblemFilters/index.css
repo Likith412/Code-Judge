@@ -1,0 +1,66 @@
+.problems-rail {
+   display: flex;
+   flex-direction: column;
+   gap: 20px;
+   padding-top: 20px;
+}
+
+.problems-rail-tags {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 6px;
+}
+
+/* The count rides inside the chip, quieter than the tag itself. */
+.problems-chip {
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+   padding: 3px 9px;
+   border: 1px solid var(--color-neutral-400);
+   background: none;
+   font: inherit;
+   font-size: 12px;
+   color: var(--color-text);
+   cursor: pointer;
+}
+
+.problems-chip:hover {
+   background: var(--color-neutral-200);
+}
+
+.problems-chip-on {
+   background: var(--color-text);
+   border-color: var(--color-text);
+   color: var(--color-bg);
+}
+
+/* Restated, or the :hover above strips the fill and hides the label. */
+.problems-chip-on:hover {
+   background: var(--color-text);
+}
+
+.problems-chip-count {
+   color: var(--color-neutral-600);
+   font-variant-numeric: tabular-nums;
+}
+
+.problems-chip-on .problems-chip-count {
+   color: var(--color-neutral-400);
+}
+
+
+/* Sits under its group, like a note would. */
+.problems-mine {
+   margin-top: var(--space-2);
+}
+
+/* A band across the top rather than a column beside. */
+@media (max-width: 760px) {
+   .problems-rail {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: var(--space-6);
+      padding-top: var(--space-4);
+   }
+}

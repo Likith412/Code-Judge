@@ -1,0 +1,26 @@
+.difficulty {
+   display: inline-block;
+   padding: 2px var(--space-2);
+   border: 1px solid var(--color-divider);
+   font-size: 11px;
+   font-weight: 600;
+   letter-spacing: 0.06em;
+   text-transform: uppercase;
+   white-space: nowrap;
+}
+
+.difficulty-easy {
+   border-color: var(--color-neutral-600);
+   color: var(--color-neutral-800);
+}
+
+.difficulty-medium {
+   border-color: var(--color-accent-2-600);
+   color: var(--color-accent-2-700);
+}
+
+.difficulty-hard {
+   border-color: var(--color-accent-700);
+   background: var(--color-accent-100);
+   color: var(--color-accent-700);
+}

@@ -56,8 +56,7 @@ async function register(req, res) {
 
    const passwordHash = await hashPassword(password);
 
-   // The account and its link land together: an account with no link cannot be
-   // confirmed, and a link with no account points at nothing.
+   // The account and its link land together, or neither is any use.
    const { user, raw } = await runTransaction(async (session) => {
       const [created] = await User.create([{ username, email, passwordHash }], {
          session,
@@ -77,8 +76,7 @@ async function register(req, res) {
       };
    });
 
-   // Sent after the commit, never inside: a retried transaction runs its body
-   // again, and an email cannot be taken back.
+   // After the commit, never inside: a retry would send it twice.
    await sendVerificationEmail({ to: user.email, token: raw });
 
    res.status(201).json(VAGUE_REPLY);
@@ -102,8 +100,7 @@ async function resendVerification(req, res) {
 }
 
 async function verify(req, res) {
-   // One step. Spending the link without confirming the address would leave the
-   // account unverified and the only link already used.
+   // One step, or a spent link can leave the address unconfirmed.
    await runTransaction(async (session) => {
       const user = await consumeLink(
          req.valid.query.token,
@@ -305,8 +302,7 @@ async function logoutAll(req, res) {
       };
    });
 
-   // This device keeps its session and its cookie, and gets a token that
-   // matches the new tokenVersion.
+   // This device keeps its session and cookie, and gets a matching token.
    res.json({
       accessToken: signAccessToken({ user: fresh, sessionId: req.auth.sid }),
       user: publicUser(fresh),
@@ -412,8 +408,7 @@ async function forgotPassword(req, res) {
 async function resetPassword(req, res) {
    const { token, password } = req.valid.body;
 
-   // Link spent, password changed, old sessions dead, address confirmed. Half
-   // of that done is either a hole or a locked out account.
+   // All four together: half of it done is a hole or a locked out account.
    const user = await runTransaction(async (session) => {
       const found = await consumeLink(token, "PASSWORD_RESET", session);
 

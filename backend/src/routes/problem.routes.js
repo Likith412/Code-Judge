@@ -19,8 +19,7 @@ router.get(
    validate({ query: schemas.listProblemsQuerySchema }),
    controller.listProblems,
 );
-// Must sit above /:slug, or "tags" is read as a slug. No problem can take that
-// slug either, which assertSlugFree enforces.
+// Above /:slug, or "tags" reads as a slug. assertSlugFree reserves the word too.
 router.get(
    "/tags",
    optionalAuth,

@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 
-// Every write lands or none does. Pass the session to each query inside, and
-// keep out anything the database cannot undo: the work may run twice.
+// Every write lands or none does. Pass the session on, and expect a retry.
 async function runTransaction(work) {
    const session = await mongoose.startSession();
 

@@ -1,5 +1,4 @@
-// The two accounts a fresh database needs: an owner for the seeded problems and
-// a setter to try the ownership rules. Known password, so never in production.
+// The two dev accounts. Known password, so this never runs in production.
 require("dotenv").config();
 
 const bcrypt = require("bcrypt");

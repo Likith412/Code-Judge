@@ -1,0 +1,190 @@
+/* Sizes here come from design/Code Judge.dc.html, the PROBLEM PAGE block. */
+
+.problem-split {
+   display: grid;
+   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+   align-items: stretch;
+}
+
+.problem-question {
+   display: flex;
+   flex-direction: column;
+   min-width: 0;
+   border-right: 1px solid var(--color-divider);
+}
+
+.problem-head {
+   padding: 20px 24px 0;
+}
+
+.problem-head-line {
+   display: flex;
+   align-items: baseline;
+   gap: 14px;
+   flex-wrap: wrap;
+}
+
+.problem-title {
+   margin: 0;
+   font-size: 26px;
+}
+
+.problem-meta {
+   display: flex;
+   align-items: center;
+   gap: var(--space-4);
+   flex-wrap: wrap;
+   margin: 10px 0 14px;
+   font-size: 12px;
+   color: var(--color-neutral-700);
+}
+
+.problem-meta-mono {
+   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+   white-space: nowrap;
+}
+
+.problem-meta-item {
+   white-space: nowrap;
+}
+
+.problem-tags {
+   display: flex;
+   gap: 6px;
+   flex-wrap: wrap;
+   padding-bottom: 14px;
+   border-bottom: 2px solid var(--color-divider);
+}
+
+/* The question scrolls on its own, so the editor beside it stays put. */
+.problem-body {
+   padding: 20px 24px 40px;
+}
+
+.problem-prose p {
+   max-width: 68ch;
+   font-size: 15px;
+   line-height: 1.6;
+}
+
+.problem-prose code {
+   padding: 1px 4px;
+   background: var(--color-neutral-200);
+   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+   font-size: 0.92em;
+}
+
+.problem-h6 {
+   margin: 24px 0 8px;
+   color: var(--color-neutral-700);
+}
+
+.problem-constraints {
+   margin: 0;
+   padding-left: 18px;
+   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+   font-size: 13px;
+   line-height: 1.8;
+}
+
+.problem-examples {
+   display: flex;
+   flex-direction: column;
+   gap: 18px;
+}
+
+.problem-example {
+   padding-top: 10px;
+   border-top: 2px solid var(--color-divider);
+}
+
+.problem-example-head {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   margin-bottom: var(--space-2);
+}
+
+.problem-example-name {
+   font-weight: 600;
+   font-size: 13px;
+}
+
+.problem-io {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+   gap: 12px;
+}
+
+.problem-io-label {
+   margin-bottom: var(--space-1);
+   font-size: 11px;
+   letter-spacing: 0.08em;
+   text-transform: uppercase;
+   color: var(--color-neutral-700);
+}
+
+/* Stdin is many lines, so the breaks and the spacing both matter. */
+.problem-io-text {
+   margin: 0;
+   padding: 10px 12px;
+   background: var(--color-surface);
+   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+   font-size: 13px;
+   line-height: 1.5;
+   white-space: pre-wrap;
+   overflow-wrap: anywhere;
+}
+
+.problem-example-note {
+   margin: var(--space-2) 0 0;
+   font-size: 13px;
+   color: var(--color-neutral-700);
+}
+
+.problem-editor-slot {
+   padding: 20px 24px;
+}
+
+.problem-editor-note {
+   margin: 0;
+   padding: var(--space-6);
+   border: 1px dashed var(--color-divider);
+   background: var(--color-neutral-100);
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}
+
+.problem-loading {
+   padding: var(--space-8) 0;
+   color: var(--color-neutral-700);
+}
+
+/* ---- tablet: the two columns stop fitting ----------------------------- */
+
+@media (max-width: 900px) {
+   .problem-split {
+      grid-template-columns: minmax(0, 1fr);
+   }
+
+   .problem-question {
+      border-right: 0;
+      border-bottom: 1px solid var(--color-divider);
+   }
+}
+
+/* ---- phone ------------------------------------------------------------ */
+
+@media (max-width: 640px) {
+   .problem-head {
+      padding: 20px 16px 0;
+   }
+
+   .problem-body {
+      padding: 20px 16px 40px;
+   }
+
+   .problem-editor-slot {
+      padding: 20px 16px;
+   }
+}

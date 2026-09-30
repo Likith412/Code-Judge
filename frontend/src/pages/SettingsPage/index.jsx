@@ -218,7 +218,7 @@ const DevicesTab = () => {
    const { signOutEverywhere } = useContext(UserContext);
 
    const [sessions, setSessions] = useState([]);
-   const [apiStatus, setApiStatus] = useState(apiStatusConstants.inProgress);
+   const [apiStatus, setApiStatus] = useState(apiStatusConstants.initial);
    const [problem, setProblem] = useState(null);
    const [confirming, setConfirming] = useState(false);
    const [reloadCount, setReloadCount] = useState(0);
@@ -226,16 +226,24 @@ const DevicesTab = () => {
    useEffect(() => {
       let cancelled = false;
 
-      listSessions()
-         .then((data) => {
+      const load = async () => {
+         setApiStatus(apiStatusConstants.inProgress);
+
+         try {
+            const data = await listSessions();
+
             if (cancelled) return;
 
             setSessions(data.sessions);
             setApiStatus(apiStatusConstants.success);
-         })
-         .catch(() => {
-            if (!cancelled) setApiStatus(apiStatusConstants.failure);
-         });
+         } catch {
+            if (cancelled) return;
+
+            setApiStatus(apiStatusConstants.failure);
+         }
+      };
+
+      load();
 
       return () => {
          cancelled = true;

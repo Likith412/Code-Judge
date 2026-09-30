@@ -53,13 +53,15 @@ const ADMIN = ["ADMIN"];
 
 function App() {
    const [user, setUser] = useState(null);
-   const [apiStatus, setApiStatus] = useState(apiStatusConstants.inProgress);
+   const [apiStatus, setApiStatus] = useState(apiStatusConstants.initial);
    const [retryCount, setRetryCount] = useState(0);
 
    useEffect(() => {
       let cancelled = false;
 
       const restoreSession = async () => {
+         setApiStatus(apiStatusConstants.inProgress);
+
          try {
             const { accessToken, user: signedIn } = await refreshSession();
 
@@ -96,10 +98,7 @@ function App() {
    // The interceptor gave up on a refresh, so the session is over.
    useEffect(() => onSessionLost(() => setUser(null)), []);
 
-   const onRetry = () => {
-      setApiStatus(apiStatusConstants.inProgress);
-      setRetryCount((count) => count + 1);
-   };
+   const onRetry = () => setRetryCount((count) => count + 1);
 
    // Pages call this so the token and the user are always set together.
    const signIn = useCallback(async (credentials) => {
@@ -126,8 +125,7 @@ function App() {
       setUser(data.user);
    }, []);
 
-   // Ends every other session. This device stays signed in on a fresh token,
-   // because bumping tokenVersion killed the old one too.
+   // Ends every other session. This one stays in, on a fresh token.
    const signOutEverywhere = useCallback(async () => {
       const data = await logoutEverywhere();
 
