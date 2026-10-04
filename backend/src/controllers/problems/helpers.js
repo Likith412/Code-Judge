@@ -158,7 +158,8 @@ function listFilter(query, user) {
    }
 
    if (query.difficulty) filter.difficulty = query.difficulty;
-   if (query.tags?.length) filter.tags = { $all: query.tags };
+   // Any one of them is enough, so picking more tags widens the list.
+   if (query.tags?.length) filter.tags = { $in: query.tags };
 
    // Whole words only: the text index does not match a half typed one.
    if (query.q) filter.$text = { $search: query.q };

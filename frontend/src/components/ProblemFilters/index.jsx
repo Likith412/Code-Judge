@@ -24,7 +24,7 @@ const visibilityFilters = [
 
 const chipClass = (parts) => parts.filter(Boolean).join(" ");
 
-// Tags pick several at once; a problem has to carry all of them to show.
+// Tags pick several at once; carrying any one of them is enough to show.
 const ProblemFilters = (props) => {
    const {
       difficulty,
