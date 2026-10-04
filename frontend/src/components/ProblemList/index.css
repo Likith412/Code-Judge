@@ -23,8 +23,10 @@
    text-decoration: none;
 }
 
+/* Colour restated, or the global a:hover paints the whole row accent. */
 .problems-row:hover {
    background: rgba(32, 30, 29, 0.04);
+   color: var(--color-text);
 }
 
 .problems-tick {

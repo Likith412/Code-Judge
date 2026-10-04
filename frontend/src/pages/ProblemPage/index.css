@@ -1,16 +1,147 @@
 /* Sizes here come from design/Code Judge.dc.html, the PROBLEM PAGE block. */
 
+/* The height comes from JS, which measures what the navbar leaves. */
+.problem-shell {
+   display: flex;
+   flex-direction: column;
+   min-height: 0;
+}
+
 .problem-split {
+   position: relative;
    display: grid;
-   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+   grid-template-columns: minmax(0, var(--problem-split)) minmax(0, 1fr);
    align-items: stretch;
 }
 
+/* Fills its tab when narrow, and the wide rules below give it a width you
+   can drag. */
 .problem-question {
    display: flex;
    flex-direction: column;
+   flex: 1;
    min-width: 0;
+   min-height: 0;
+   height: 100%;
+   overflow: auto;
    border-right: 1px solid var(--color-divider);
+}
+
+.problem-split > .problem-question {
+   width: auto;
+}
+
+/* Fills its tab when narrow; the wide grid stretches it either way. */
+.problem-code {
+   display: flex;
+   flex-direction: column;
+   flex: 1;
+   min-width: 0;
+   min-height: 0;
+}
+
+/* Fills its tab on a narrow screen; the wide layout sets a dragged height. */
+.problem-result {
+   display: flex;
+   flex-direction: column;
+   flex: 1;
+   min-height: 0;
+}
+
+.problem-result-resize {
+   position: relative;
+   flex: 0 0 auto;
+   min-height: 0;
+   padding-top: 4px;
+}
+
+/* A strip across the top of the code column, as the design has it. */
+.problem-gate {
+   display: flex;
+   align-items: center;
+   gap: 14px;
+   padding: 10px 16px;
+   border-bottom: 1px solid var(--color-divider);
+   background: var(--color-surface);
+   font-size: 13px;
+}
+
+.problem-grab-col,
+.problem-grab-row {
+   position: absolute;
+   z-index: 2;
+   display: grid;
+   place-items: center;
+   background: var(--color-surface);
+   user-select: none;
+   touch-action: none;
+   padding: 0;
+}
+
+.problem-grab-col {
+   top: 0;
+   bottom: 0;
+   left: calc(var(--problem-split) - 4px);
+   width: 8px;
+   cursor: col-resize;
+}
+
+.problem-grab-row {
+   top: 0;
+   left: 2.5px;
+   width: calc(100% - 5px);
+   height: 8px;
+   border-top: 1px solid var(--color-divider);
+   cursor: row-resize;
+}
+
+.problem-grab-col:hover,
+.problem-grab-row:hover {
+   background: var(--color-neutral-300);
+}
+
+.problem-grab-col .problem-grip {
+   width: 2px;
+   height: 28px;
+   background: var(--color-neutral-500);
+}
+
+.problem-grab-row .problem-grip {
+   width: 28px;
+   height: 2px;
+   background: var(--color-neutral-500);
+}
+
+/* Problem / Code / Result, only when the columns cannot sit side by side. */
+.problem-tabs {
+   display: flex;
+   border-bottom: 2px solid var(--color-divider);
+}
+
+.problem-tab {
+   flex: 1;
+   padding: 12px 14px;
+   border: 0;
+   border-bottom: 3px solid transparent;
+   margin-bottom: -2px;
+   background: transparent;
+   font: inherit;
+   font-size: 14px;
+   color: var(--color-neutral-700);
+   cursor: pointer;
+}
+
+.problem-tab-on {
+   border-bottom-color: var(--color-accent);
+   color: var(--color-text);
+   font-weight: 600;
+}
+
+.problem-pane {
+   display: flex;
+   flex-direction: column;
+   flex: 1;
+   min-height: 0;
 }
 
 .problem-head {
@@ -56,7 +187,6 @@
    border-bottom: 2px solid var(--color-divider);
 }
 
-/* The question scrolls on its own, so the editor beside it stays put. */
 .problem-body {
    padding: 20px 24px 40px;
 }
@@ -142,35 +272,9 @@
    color: var(--color-neutral-700);
 }
 
-.problem-editor-slot {
-   padding: 20px 24px;
-}
-
-.problem-editor-note {
-   margin: 0;
-   padding: var(--space-6);
-   border: 1px dashed var(--color-divider);
-   background: var(--color-neutral-100);
-   font-size: 14px;
-   color: var(--color-neutral-700);
-}
-
 .problem-loading {
    padding: var(--space-8) 0;
    color: var(--color-neutral-700);
-}
-
-/* ---- tablet: the two columns stop fitting ----------------------------- */
-
-@media (max-width: 900px) {
-   .problem-split {
-      grid-template-columns: minmax(0, 1fr);
-   }
-
-   .problem-question {
-      border-right: 0;
-      border-bottom: 1px solid var(--color-divider);
-   }
 }
 
 /* ---- phone ------------------------------------------------------------ */
@@ -182,9 +286,5 @@
 
    .problem-body {
       padding: 20px 16px 40px;
-   }
-
-   .problem-editor-slot {
-      padding: 20px 16px;
    }
 }

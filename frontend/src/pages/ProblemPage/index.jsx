@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Markdown from "react-markdown";
 
@@ -7,6 +7,10 @@ import { apiError } from "../../services/api/client";
 import DifficultyTag from "../../components/DifficultyTag";
 import CopyButton from "../../components/CopyButton";
 import FailureView from "../../components/FailureView";
+import CodeEditor from "../../components/CodeEditor";
+import ResultPanel from "../../components/ResultPanel";
+import UserContext from "../../context/UserContext";
+import { LANG_LABEL } from "../../utils/languages";
 
 import "./index.css";
 
@@ -17,13 +21,57 @@ const apiStatusConstants = {
    inProgress: "IN_PROGRESS",
 };
 
+// The design opens at 46% question, 260px of result.
+const SPLIT = { start: 46, min: 25, max: 75 };
+const RESULT = { start: 260, min: 120, max: 520 };
+const NARROW = 900;
+
+const mobileTabs = [
+   { value: "problem", label: "Problem" },
+   { value: "code", label: "Code" },
+   { value: "result", label: "Result" },
+];
+
 const ProblemPage = () => {
    const { slug } = useParams();
+
+   const { user } = useContext(UserContext);
+
+   // Only a USER submits code, so only a USER gets a writable editor.
+   const solves = user?.role === "USER";
 
    const [problem, setProblem] = useState(null);
    const [apiStatus, setApiStatus] = useState(apiStatusConstants.initial);
    const [failure, setFailure] = useState(null);
    const [reloadCount, setReloadCount] = useState(0);
+
+   const [syncedSlug, setSyncedSlug] = useState(null);
+   const [language, setLanguage] = useState("");
+   const [drafts, setDrafts] = useState({});
+
+   const [split, setSplit] = useState(SPLIT.start);
+   const [resultH, setResultH] = useState(RESULT.start);
+   const [mtab, setMtab] = useState("problem");
+   const [resetConfirm, setResetConfirm] = useState(false);
+   const [view, setView] = useState({ height: 0, width: 0, narrow: false });
+
+   // The shell fills what the navbar leaves, measured rather than calculated.
+   useEffect(() => {
+      const measure = () => {
+         const nav = document.querySelector(".cj-nav");
+
+         setView({
+            height: window.innerHeight - (nav ? nav.offsetHeight : 0),
+            width: window.innerWidth,
+            narrow: window.innerWidth <= NARROW,
+         });
+      };
+
+      measure();
+      window.addEventListener("resize", measure);
+
+      return () => window.removeEventListener("resize", measure);
+   }, []);
 
    useEffect(() => {
       let cancelled = false;
@@ -52,6 +100,25 @@ const ProblemPage = () => {
          cancelled = true;
       };
    }, [slug, reloadCount]);
+
+   // A new problem resets the language and anything typed, during render.
+   if (problem && problem.slug !== syncedSlug) {
+      setSyncedSlug(problem.slug);
+      setLanguage(problem.supportedLanguages[0] || "");
+      setDrafts({});
+   }
+
+   const starter = problem?.starterCode?.[language] || "";
+   const code = drafts[language] ?? starter;
+   const dirty = code !== starter;
+
+   const onReset = () => {
+      const next = { ...drafts };
+
+      delete next[language];
+      setDrafts(next);
+      setResetConfirm(false);
+   };
 
    const renderHead = () => (
       <div className="problem-head">
@@ -155,15 +222,232 @@ const ProblemPage = () => {
       </section>
    );
 
-   // Phase 3 puts the editor and the result panel in here.
-   const renderEditorSlot = () => (
-      <section className="problem-editor-slot">
-         <p className="problem-editor-note">
-            The editor arrives in phase 3. For now this problem can be read but
-            not solved.
-         </p>
+   const renderGate = () =>
+      !solves && (
+         <div className="problem-gate">
+            {user ? (
+               "Setters and admins do not run or submit code, so the editor is read only."
+            ) : (
+               <span>
+                  Running code needs an account.{" "}
+                  <Link to="/login">Sign in</Link> or{" "}
+                  <Link to="/register">register</Link> - it is free and takes a
+                  minute.
+               </span>
+            )}
+         </div>
+      );
+
+   const renderEditor = () => (
+      <CodeEditor
+         languages={problem.supportedLanguages}
+         language={language}
+         code={code}
+         dirty={dirty}
+         readOnly={!solves}
+         onPickLanguage={setLanguage}
+         onChange={(value) => setDrafts({ ...drafts, [language]: value })}
+         onReset={() => setResetConfirm(true)}
+      />
+   );
+
+   const renderResult = () => (
+      <div className="problem-result">
+         <ResultPanel
+            sampleCount={problem.sampleTestCases.length}
+            testCount={problem.testCaseCount}
+            solves={solves}
+            signedIn={Boolean(user)}
+         />
+      </div>
+   );
+
+   const renderCodeColumn = () => (
+      <section className="problem-code">
+         {renderGate()}
+         {renderEditor()}
+         <div className="problem-result-resize" style={{ height: resultH }}>
+            <div
+               className="problem-grab-row"
+               role="separator"
+               aria-label="Resize result panel"
+               aria-orientation="horizontal"
+               aria-valuemin={RESULT.min}
+               aria-valuemax={RESULT.max}
+               aria-valuenow={resultH}
+               tabIndex={0}
+               onKeyDown={(event) => {
+                  if (event.key === "ArrowUp")
+                     setResultH((height) => Math.min(RESULT.max, height + 10));
+                  if (event.key === "ArrowDown")
+                     setResultH((height) => Math.max(RESULT.min, height - 10));
+               }}
+               onPointerDown={(event) => {
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                  event.currentTarget.dataset.startY = event.clientY;
+                  event.currentTarget.dataset.startHeight = resultH;
+               }}
+               onPointerMove={(event) => {
+                  if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+                     return;
+                  }
+                  const startY = Number(event.currentTarget.dataset.startY);
+                  const startHeight = Number(
+                     event.currentTarget.dataset.startHeight,
+                  );
+                  const next = Math.min(
+                     RESULT.max,
+                     Math.max(
+                        RESULT.min,
+                        startHeight - (event.clientY - startY),
+                     ),
+                  );
+                  setResultH(next);
+               }}
+            >
+               <span className="problem-grip" />
+            </div>
+            {renderResult()}
+         </div>
       </section>
    );
+
+   // One tab, one pane: code is the editor, result is the result.
+   const renderTabPane = () => {
+      if (mtab === "problem") return renderQuestion();
+
+      return (
+         <section className="problem-code">
+            {renderGate()}
+            {mtab === "code" ? renderEditor() : renderResult()}
+         </section>
+      );
+   };
+
+   const renderTabs = () => (
+      <div className="problem-tabs">
+         {mobileTabs.map((tab) => (
+            <button
+               key={tab.value}
+               type="button"
+               className={
+                  tab.value === mtab
+                     ? "problem-tab problem-tab-on"
+                     : "problem-tab"
+               }
+               onClick={() => setMtab(tab.value)}
+            >
+               {tab.label}
+            </button>
+         ))}
+      </div>
+   );
+
+   const renderResetConfirm = () => (
+      <div className="dialog-backdrop">
+         <div className="dialog">
+            <div className="dialog-title">Reset to starter code?</div>
+
+            <div className="dialog-body">
+               Everything you wrote in {LANG_LABEL[language] || language} for
+               this problem is thrown away. There is no undo.
+            </div>
+
+            <div className="dialog-actions">
+               <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setResetConfirm(false)}
+               >
+                  Keep my code
+               </button>
+
+               <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={onReset}
+               >
+                  Reset
+               </button>
+            </div>
+         </div>
+      </div>
+   );
+
+   // Wide shows both columns. Narrow shows whichever tab is picked.
+   const renderSplit = () => {
+      if (view.narrow) {
+         return (
+            <>
+               <div className="problem-shell" style={{ height: view.height }}>
+                  {renderTabs()}
+
+                  <div className="problem-pane">{renderTabPane()}</div>
+               </div>
+
+               {resetConfirm && renderResetConfirm()}
+            </>
+         );
+      }
+
+      return (
+         <>
+            <div
+               className="problem-shell problem-split"
+               style={{ height: view.height, "--problem-split": `${split}%` }}
+            >
+               {renderQuestion()}
+               {renderCodeColumn()}
+               <div
+                  className="problem-grab-col"
+                  role="separator"
+                  aria-label="Resize question and code panels"
+                  aria-orientation="vertical"
+                  aria-valuemin={SPLIT.min}
+                  aria-valuemax={SPLIT.max}
+                  aria-valuenow={split}
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                     if (event.key === "ArrowLeft")
+                        setSplit((value) => Math.max(SPLIT.min, value - 2));
+                     if (event.key === "ArrowRight")
+                        setSplit((value) => Math.min(SPLIT.max, value + 2));
+                  }}
+                  onPointerDown={(event) => {
+                     event.currentTarget.setPointerCapture(event.pointerId);
+                     event.currentTarget.dataset.startX = event.clientX;
+                     event.currentTarget.dataset.startSplit = split;
+                     event.currentTarget.dataset.width =
+                        event.currentTarget.parentElement.getBoundingClientRect().width;
+                  }}
+                  onPointerMove={(event) => {
+                     if (
+                        !event.currentTarget.hasPointerCapture(event.pointerId)
+                     )
+                        return;
+                     const dx =
+                        event.clientX -
+                        Number(event.currentTarget.dataset.startX);
+                     const width = Number(event.currentTarget.dataset.width);
+                     const start = Number(
+                        event.currentTarget.dataset.startSplit,
+                     );
+                     setSplit(
+                        Math.min(
+                           SPLIT.max,
+                           Math.max(SPLIT.min, start + (dx / width) * 100),
+                        ),
+                     );
+                  }}
+               >
+                  <span className="problem-grip" />
+               </div>
+            </div>
+
+            {resetConfirm && renderResetConfirm()}
+         </>
+      );
+   };
 
    const renderMissing = () => (
       <main className="cj-main-narrow">
@@ -193,12 +477,7 @@ const ProblemPage = () => {
 
    switch (apiStatus) {
       case apiStatusConstants.success:
-         return (
-            <div className="problem-split">
-               {renderQuestion()}
-               {renderEditorSlot()}
-            </div>
-         );
+         return renderSplit();
       case apiStatusConstants.failure:
          return renderFailure();
       case apiStatusConstants.inProgress:

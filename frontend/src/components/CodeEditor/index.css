@@ -1,0 +1,53 @@
+.editor {
+   display: flex;
+   flex-direction: column;
+   min-width: 0;
+   min-height: 0;
+   flex: 1;
+}
+
+.editor-bar {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   padding: 8px 12px;
+   border-bottom: 1px solid var(--color-divider);
+}
+
+/* Narrow, since a language name is short. */
+.editor-lang {
+   width: 120px;
+   min-height: 30px;
+   padding: 3px 8px;
+   font-size: 13px;
+}
+
+.editor-note {
+   font-size: 12px;
+   color: var(--color-neutral-700);
+}
+
+.editor-spacer {
+   flex: 1;
+}
+
+.editor-reset {
+   font-size: 13px;
+}
+
+/* Monaco needs a sized box, so this one is told to fill what is left. */
+.editor-surface {
+   flex: 1;
+   width: calc(100% - 6px);
+   align-self: center;
+   min-height: 120px;
+   background: #fff;
+}
+
+.editor-loading {
+   display: block;
+   padding: 14px 16px;
+   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+   font-size: 13px;
+   color: var(--color-neutral-700);
+}
