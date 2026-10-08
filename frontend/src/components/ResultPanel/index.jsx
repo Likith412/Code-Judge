@@ -98,7 +98,7 @@ const ResultPanel = (props) => {
 
    const meta = (row) =>
       [
-         row.runtimeMs != null ? `${row.runtimeMs} ms` : "—",
+         row.runtimeMs != null ? `${row.runtimeMs} ms` : "-",
          `${row.testCasesPassed}/${row.totalTestCases}`,
       ].join(" · ");
 
@@ -239,8 +239,8 @@ const ResultPanel = (props) => {
             return [
                `Failed on test ${at} of ${total}` +
                   (sample
-                     ? " — a sample case, shown below."
-                     : " — a hidden case, so its input isn’t shown."),
+                     ? " - a sample case, shown below."
+                     : " - a hidden case, so its input isn’t shown."),
             ];
          case "TIME_LIMIT_EXCEEDED":
             return [
