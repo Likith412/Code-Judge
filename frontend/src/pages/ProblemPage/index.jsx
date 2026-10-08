@@ -3,6 +3,10 @@ import { Link, useParams } from "react-router-dom";
 import Markdown from "react-markdown";
 
 import { getProblem } from "../../services/api/problems";
+import {
+   createSubmission,
+   getSubmission,
+} from "../../services/api/submissions";
 import { apiError } from "../../services/api/client";
 import DifficultyTag from "../../components/DifficultyTag";
 import CopyButton from "../../components/CopyButton";
@@ -11,6 +15,7 @@ import CodeEditor from "../../components/CodeEditor";
 import ResultPanel from "../../components/ResultPanel";
 import UserContext from "../../context/UserContext";
 import { LANG_LABEL } from "../../utils/languages";
+import { isPending } from "../../utils/verdicts";
 
 import "./index.css";
 
@@ -25,6 +30,9 @@ const apiStatusConstants = {
 const SPLIT = { start: 46, min: 25, max: 75 };
 const RESULT = { start: 260, min: 120, max: 520 };
 const NARROW = 900;
+
+// Once a second until the verdict lands. Phase 7 swaps this for a socket.
+const POLL_MS = 1000;
 
 const mobileTabs = [
    { value: "problem", label: "Problem" },
@@ -54,6 +62,49 @@ const ProblemPage = () => {
    const [mtab, setMtab] = useState("problem");
    const [resetConfirm, setResetConfirm] = useState(false);
    const [view, setView] = useState({ height: 0, width: 0, narrow: false });
+
+   // The latest Run or Submit: { submission, startedAt } or { error }.
+   const [attempt, setAttempt] = useState(null);
+   const [sending, setSending] = useState(false);
+
+   const pendingId =
+      attempt?.submission && isPending(attempt.submission.status)
+         ? attempt.submission.id
+         : null;
+
+   // Ask again until the verdict lands. A failed poll just waits a bit longer.
+   useEffect(() => {
+      if (!pendingId) return undefined;
+
+      let cancelled = false;
+      let timer;
+
+      const poll = async () => {
+         try {
+            const data = await getSubmission(pendingId);
+
+            if (cancelled) return;
+
+            setAttempt((current) =>
+               current?.submission?.id === pendingId
+                  ? { ...current, submission: data.submission }
+                  : current,
+            );
+
+            if (isPending(data.submission.status))
+               timer = setTimeout(poll, POLL_MS);
+         } catch {
+            if (!cancelled) timer = setTimeout(poll, POLL_MS * 3);
+         }
+      };
+
+      timer = setTimeout(poll, POLL_MS);
+
+      return () => {
+         cancelled = true;
+         clearTimeout(timer);
+      };
+   }, [pendingId]);
 
    // The shell fills what the navbar leaves, measured rather than calculated.
    useEffect(() => {
@@ -106,6 +157,7 @@ const ProblemPage = () => {
       setSyncedSlug(problem.slug);
       setLanguage(problem.supportedLanguages[0] || "");
       setDrafts({});
+      setAttempt(null);
    }
 
    const starter = problem?.starterCode?.[language] || "";
@@ -118,6 +170,28 @@ const ProblemPage = () => {
       delete next[language];
       setDrafts(next);
       setResetConfirm(false);
+   };
+
+   const send = async (isSampleRun) => {
+      setSending(true);
+
+      // On a phone the verdict lives on its own tab.
+      if (view.narrow) setMtab("result");
+
+      try {
+         const data = await createSubmission({
+            problemId: problem.id,
+            language,
+            sourceCode: code,
+            isSampleRun,
+         });
+
+         setAttempt({ submission: data.submission, startedAt: Date.now() });
+      } catch (error) {
+         setAttempt({ error: apiError(error).message });
+      } finally {
+         setSending(false);
+      }
    };
 
    const renderHead = () => (
@@ -254,10 +328,19 @@ const ProblemPage = () => {
    const renderResult = () => (
       <div className="problem-result">
          <ResultPanel
-            sampleCount={problem.sampleTestCases.length}
-            testCount={problem.testCaseCount}
+            problem={{
+               sampleCount: problem.sampleTestCases.length,
+               testCount: problem.testCaseCount,
+               timeLimitMs: problem.timeLimitMs,
+               memoryLimitMb: problem.memoryLimitMb,
+            }}
+            language={language}
             solves={solves}
             signedIn={Boolean(user)}
+            attempt={attempt}
+            sending={sending}
+            onRun={() => send(true)}
+            onSubmit={() => send(false)}
          />
       </div>
    );
