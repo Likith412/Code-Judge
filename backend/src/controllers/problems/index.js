@@ -37,7 +37,7 @@ const SLUG_TAKEN = "Another problem already uses that slug";
 
 async function listProblems(req, res) {
    const query = req.valid.query;
-   const filter = listFilter(query, req.user);
+   const filter = await listFilter(query, req.user);
 
    const [rows, total] = await Promise.all([
       Problem.find(filter)
@@ -67,7 +67,7 @@ async function listProblems(req, res) {
 
 async function listTags(req, res) {
    // Same visibility rules as the list, so the counts match what you can see.
-   const filter = listFilter(req.valid.query, req.user);
+   const filter = await listFilter(req.valid.query, req.user);
    const tags = await tagCounts(filter);
 
    res.json({ tags, total: tags.length });

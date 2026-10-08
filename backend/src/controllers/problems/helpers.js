@@ -1,5 +1,5 @@
 // Shared by the problem handlers. Nothing here touches res: it returns a value.
-const { Problem, TestCase } = require("../../models");
+const { Problem, Submission, TestCase } = require("../../models");
 const { ApiError } = require("../../utils/ApiError");
 const { slugify } = require("../../utils/slug");
 const { RESERVED_SLUGS } = require("../../utils/constants");
@@ -41,8 +41,9 @@ const starterFor = (problem) =>
 const solvedSet = (user) =>
    new Set((user?.solvedProblemIds || []).map((id) => String(id)));
 
-// Problems submitted to. Empty until phase 4, so "tried" matches nothing yet.
-const attemptedIds = () => [];
+// Problems this person has pressed Submit on. Sample runs do not count.
+const attemptedIds = (user) =>
+   Submission.distinct("problemId", { userId: user._id, isSampleRun: false });
 
 // One row in the list. Draft fields are added only for a setter or admin.
 const problemCard = (problem, { showDraftFields, solved }) => ({
@@ -135,7 +136,7 @@ const SORTS = {
 const listSort = (key) => SORTS[key] || SORTS.NEWEST;
 
 // Anyone without the role sees published problems, whatever they asked for.
-function listFilter(query, user) {
+async function listFilter(query, user) {
    const status = canSeeDrafts(user) ? query.status : "PUBLISHED";
    const filter = {};
 
@@ -153,7 +154,7 @@ function listFilter(query, user) {
 
       // Submitted to at least once and still not solved.
       if (query.progress === "tried") {
-         filter._id = { $in: attemptedIds(user), $nin: solved };
+         filter._id = { $in: await attemptedIds(user), $nin: solved };
       }
    }
 

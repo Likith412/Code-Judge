@@ -5,4 +5,5 @@ module.exports = {
    AuditLog: require("./AuditLog"),
    Problem: require("./Problem"),
    TestCase: require("./TestCase"),
+   Submission: require("./Submission"),
 };
