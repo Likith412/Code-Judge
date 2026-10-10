@@ -5,7 +5,7 @@ const logger = require("../config/logger");
 const { Problem, Submission, TestCase } = require("../models");
 const { PENDING_STATUSES } = require("../utils/constants");
 const { outputMatches } = require("./compare");
-const runner = require("./localRunner");
+const runner = require("./dockerRunner");
 
 // More at once would starve the API of CPU. BullMQ takes over in phase 6.
 const MAX_RUNNING = 2;
@@ -23,6 +23,16 @@ const cut = (text, limit) =>
 
 /* ---- one case, raw result to verdict ---------------------------------- */
 
+// stderr is the program's to write: on a hidden test it could print the
+// input. So a hidden crash shows only a known exception name, or nothing.
+function crashMessage(raw, testCase) {
+   if (!testCase.isHidden) return raw.stderr || `Exited with code ${raw.code}`;
+
+   const what = raw.crashName || `Exited with code ${raw.code}`;
+
+   return `${what}\n\nThe full error is not shown for a hidden test.`;
+}
+
 function caseVerdict(raw, testCase, comparisonMode) {
    if (raw.timedOut) return { status: "TIME_LIMIT_EXCEEDED" };
    if (raw.outOfMemory) return { status: "MEMORY_LIMIT_EXCEEDED" };
@@ -30,15 +40,12 @@ function caseVerdict(raw, testCase, comparisonMode) {
    if (raw.overflow) {
       return {
          status: "RUNTIME_ERROR",
-         message: `Printed more than ${runner.OUTPUT_LIMIT_BYTES / 1024} KB, so it was stopped.`,
+         message: `Printed more than ${Math.round(raw.outputLimit / 1024)} KB, so it was stopped.`,
       };
    }
 
    if (raw.code !== 0) {
-      return {
-         status: "RUNTIME_ERROR",
-         message: raw.stderr || `Exited with code ${raw.code}`,
-      };
+      return { status: "RUNTIME_ERROR", message: crashMessage(raw, testCase) };
    }
 
    const passed = outputMatches(
@@ -70,9 +77,11 @@ async function runCases(submission, problem, cases) {
    };
    const stopEarly = !submission.isSampleRun;
 
-   const { dir, compileError } = await runner.prepare(
+   // The container is sized to this problem's memory limit.
+   const { box, compileError } = await runner.prepare(
       submission.language,
       submission.sourceCode,
+      limits,
    );
 
    try {
@@ -89,12 +98,7 @@ async function runCases(submission, problem, cases) {
 
       for (const [index, testCase] of cases.entries()) {
          const position = index + 1;
-         const raw = await runner.runOne(
-            dir,
-            submission.language,
-            testCase.input,
-            limits,
-         );
+         const raw = await runner.runOne(box, testCase, limits);
          const verdict = caseVerdict(raw, testCase, problem.comparisonMode);
 
          fields.runtimeMs = Math.max(fields.runtimeMs, raw.ms);
@@ -120,14 +124,15 @@ async function runCases(submission, problem, cases) {
             }
          }
 
-         if (stopEarly) break;
+         // A killed box cannot run the next sample either.
+         if (stopEarly || raw.stop) break;
       }
 
       if (samples.length) fields.sampleResults = samples;
 
       return fields;
    } finally {
-      await runner.cleanup(dir);
+      await runner.cleanup(box);
    }
 }
 
@@ -200,6 +205,24 @@ function enqueue(id) {
    drain();
 }
 
+// Docker trouble is a warning, not a crash: the API serves everything but judging.
+async function checkSandbox() {
+   try {
+      // Their submissions start over in resumeJudging, so old boxes are of no use.
+      const removed = await runner.removeLeftovers();
+      if (removed) logger.info(`Removed ${removed} leftover sandboxes`);
+
+      const missing = await runner.missingImages();
+      if (missing.length) {
+         logger.warn(
+            `Judge images missing: ${missing.join(", ")}. Run npm run judge:images`,
+         );
+      }
+   } catch (err) {
+      logger.warn({ err }, "Docker is not reachable, so nothing can be judged");
+   }
+}
+
 // The queue lives in memory, so a restart loses it. Pick up what was left.
 async function resumeJudging() {
    const stuck = await Submission.find({ status: { $in: PENDING_STATUSES } })
@@ -218,4 +241,9 @@ async function resumeJudging() {
    return stuck.length;
 }
 
-module.exports = { enqueue, resumeJudging, canRun: runner.canRun };
+module.exports = {
+   enqueue,
+   resumeJudging,
+   canRun: runner.canRun,
+   checkSandbox,
+};

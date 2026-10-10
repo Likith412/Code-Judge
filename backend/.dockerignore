@@ -1,0 +1,6 @@
+# Only package files and src/ go into the image. Secrets come from compose.
+node_modules
+.env
+.env.*
+!.env.example
+*.log

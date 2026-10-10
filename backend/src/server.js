@@ -6,7 +6,7 @@ const { PORT } = require("./config/env");
 const { connectDatabase, disconnectDatabase } = require("./config/db");
 const { verifyMailer } = require("./config/mailer");
 const logger = require("./config/logger");
-const { resumeJudging } = require("./judge");
+const { resumeJudging, checkSandbox } = require("./judge");
 const app = require("./app");
 
 const SHUTDOWN_TIMEOUT_MS = 10000;
@@ -20,6 +20,9 @@ async function startServer() {
 
       // A broken mail setup should be a warning at startup, not a failed registration an hour later.
       await verifyMailer();
+
+      // Without Docker or its images the judge can only answer SYSTEM_ERROR. Say so now.
+      await checkSandbox();
 
       // The judge queue is in memory, so anything left from the last run starts again.
       const resumed = await resumeJudging();

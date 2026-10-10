@@ -1,10 +1,15 @@
-# The stateful parts of the stack, for development. The API and the web app run
-# on the host with npm run dev; phase 11 adds them here.
+# The whole stack. Two ways to use it:
 #
-#   docker compose up -d           start MongoDB
-#   docker compose up mongo-init   start its replica set, first time only
+#   Everything in containers, the web app on http://localhost:8080
+#     docker compose up -d --build
+#
+#   Only the databases, with the API and web app on the host (npm run dev)
+#     docker compose up -d mongo mongo-init redis
+#
 #   docker compose down            stop it, keep the data
 #   docker compose down -v         stop it and throw the data away
+#
+# The api service reads backend/.env, so copy backend/.env.example first.
 
 services:
    mongo:
@@ -59,6 +64,64 @@ services:
          interval: 10s
          timeout: 5s
          retries: 5
+
+   # Builds the Java sandbox image the API starts for each submission, then
+   # exits. Same as npm run judge:images.
+   judge-java:
+      build: ./backend/src/judge/images/java
+      image: code-judge-java
+      command: ["true"]
+      restart: "no"
+
+   api:
+      build: ./backend
+      container_name: code-judge-api
+      restart: unless-stopped
+      init: true
+      env_file: ./backend/.env
+      # What differs from running on the host. The rest comes from backend/.env.
+      environment:
+         NODE_ENV: production
+         MONGO_URI: mongodb://mongo:27017/code-judge?replicaSet=rs0
+         ALLOWED_ORIGINS: http://localhost:8080
+         WEB_URL: http://localhost:8080
+         DOCKER_HOST: unix:///var/run/docker.sock
+      # The API judges code by starting sandbox containers on the host's Docker.
+      # Whoever holds this socket controls Docker, so phase 6 moves it to a worker.
+      volumes:
+         - /var/run/docker.sock:/var/run/docker.sock
+      # The socket's group, so the API need not be root. 0 on Docker Desktop;
+      # on Linux set DOCKER_GID to the docker group (getent group docker).
+      group_add:
+         - "${DOCKER_GID:-0}"
+      depends_on:
+         mongo:
+            condition: service_healthy
+         mongo-init:
+            condition: service_completed_successfully
+         redis:
+            condition: service_healthy
+         judge-java:
+            condition: service_completed_successfully
+      healthcheck:
+         test:
+            - CMD
+            - node
+            - -e
+            - "fetch('http://localhost:3000/api/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+         interval: 10s
+         timeout: 5s
+         retries: 5
+
+   web:
+      build: ./frontend
+      container_name: code-judge-web
+      restart: unless-stopped
+      ports:
+         - "8080:80"
+      depends_on:
+         api:
+            condition: service_healthy
 
 volumes:
    mongo-data:

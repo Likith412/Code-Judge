@@ -25,6 +25,9 @@ const schema = z.object({
 
    // Only the seed reads this, and it refuses to run in production.
    SEED_PASSWORD: z.string().min(10).default("codejudge-dev-pass"),
+
+   // Where the judge reaches Docker. Empty means find the local socket.
+   DOCKER_HOST: z.string().default(""),
 });
 
 const result = schema.safeParse(process.env);

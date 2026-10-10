@@ -7,7 +7,8 @@
       "dev": "nodemon src/server.js",
       "start": "node src/server.js",
       "seed": "node src/seed/index.js",
-      "seed:users": "node src/seed/users.js"
+      "seed:users": "node src/seed/users.js",
+      "judge:images": "docker build -t code-judge-java src/judge/images/java"
    },
    "keywords": [],
    "author": "",
@@ -18,6 +19,7 @@
       "bullmq": "^6.3.8",
       "cookie-parser": "^1.4.7",
       "cors": "^2.8.6",
+      "dockerode": "^5.0.1",
       "dotenv": "^17.4.2",
       "express": "^5.2.1",
       "helmet": "^8.3.0",
