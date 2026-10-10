@@ -101,7 +101,7 @@ h6 {
    color: var(--color-neutral-700);
 }
 
-/* Counts, rates, runtimes: digits that do not jitter between rows. */
+/* Counts and rates: digits that do not jitter between rows. */
 .cj-num {
    font-variant-numeric: tabular-nums;
 }

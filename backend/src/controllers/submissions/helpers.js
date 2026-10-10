@@ -51,8 +51,6 @@ const submissionView = (row) => ({
    language: row.language,
    sourceCode: row.sourceCode,
    status: row.status,
-   runtimeMs: row.runtimeMs,
-   memoryKb: row.memoryKb,
    testCasesPassed: row.testCasesPassed,
    totalTestCases: row.totalTestCases,
    failedTestIndex: row.failedTestIndex,

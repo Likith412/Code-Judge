@@ -96,11 +96,7 @@ const ResultPanel = (props) => {
       return "Run isn’t saved. Submit is.";
    };
 
-   const meta = (row) =>
-      [
-         row.runtimeMs != null ? `${row.runtimeMs} ms` : "-",
-         `${row.testCasesPassed}/${row.totalTestCases}`,
-      ].join(" · ");
+   const meta = (row) => `${row.testCasesPassed}/${row.totalTestCases}`;
 
    const renderIdle = () => (
       <p className="result-idle">

@@ -13,7 +13,6 @@ const sampleResultSchema = new Schema(
       input: { type: String, default: "" },
       expectedOutput: { type: String, default: "" },
       actualOutput: { type: String, default: "" },
-      runtimeMs: Number,
    },
    { _id: false },
 );
@@ -38,10 +37,6 @@ const submissionSchema = new Schema(
          required: true,
          default: "QUEUED",
       },
-
-      // Worst over the cases that ran. Unset until there is a verdict.
-      runtimeMs: Number,
-      memoryKb: Number,
 
       testCasesPassed: { type: Number, required: true, default: 0 },
       totalTestCases: { type: Number, required: true, default: 0 },

@@ -64,7 +64,6 @@ const sampleResult = (position, testCase, raw, verdict) => ({
    input: testCase.input,
    expectedOutput: testCase.expectedOutput,
    actualOutput: cut(raw.stdout, SAMPLE_OUTPUT_LIMIT),
-   runtimeMs: raw.ms,
 });
 
 /* ---- every case, to the fields a submission keeps --------------------- */
@@ -93,15 +92,13 @@ async function runCases(submission, problem, cases) {
          };
       }
 
-      const fields = { status: "ACCEPTED", testCasesPassed: 0, runtimeMs: 0 };
+      const fields = { status: "ACCEPTED", testCasesPassed: 0 };
       const samples = [];
 
       for (const [index, testCase] of cases.entries()) {
          const position = index + 1;
          const raw = await runner.runOne(box, testCase, limits);
          const verdict = caseVerdict(raw, testCase, problem.comparisonMode);
-
-         fields.runtimeMs = Math.max(fields.runtimeMs, raw.ms);
 
          if (submission.isSampleRun) {
             samples.push(sampleResult(position, testCase, raw, verdict));
