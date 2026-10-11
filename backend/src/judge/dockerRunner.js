@@ -1,40 +1,39 @@
-// Runs submitted code inside a locked-down container, one per submission.
+// Runs user code in a safe container, one per submission.
 const crypto = require("node:crypto");
 const { PassThrough } = require("node:stream");
 
 const docker = require("../config/docker");
 
-// stdout may be twice the expected answer, within these bounds. More is stopped.
+// stdout can be up to twice the expected answer, kept between these sizes.
 const OUTPUT_MIN_BYTES = 64 * 1024;
 const OUTPUT_MAX_BYTES = 8 * 1024 * 1024;
 
-// stderr is only ever shown cut short, so it gets the small limit.
+// stderr is only shown in short form, so a small limit is enough.
 const STDERR_LIMIT_BYTES = 64 * 1024;
 const COMPILE_TIMEOUT_MS = 30_000;
 
-// The time limit is CPU time. Wall time gets slack for a busy machine, and
-// still stops a program that only sleeps or waits on input.
+// The time limit is CPU time. Wall time gets extra room,
+// but still stops a program that just sleeps or waits.
 const wallCapMs = (timeLimitMs) => timeLimitMs * 2 + 500;
 
-// Past the wall cap + grace, Node stops waiting and kills the container itself.
+// After the wall cap plus this, we kill the container ourselves.
 const WALL_GRACE_MS = 2_000;
 
-// Every sandbox carries this, so a restart can find and remove leftovers.
+// Every box gets this label, so we can clean up leftovers after a restart.
 const BOX_LABEL = "code-judge.box";
 
 const MB = 1024 * 1024;
 
-// One image per language. Python and C++ arrive in phase 8.
+// One image per language. Python and C++ come in phase 8.
 const RUNNERS = {
    java: {
       image: "code-judge-java",
       file: "Main.java",
-      // Hitting the process cap also says OutOfMemoryError. That one is a crash.
+      // Too many threads also says OutOfMemoryError. Treat that as a crash.
       outOfMemory: (stderr) =>
          stderr.includes("java.lang.OutOfMemoryError") &&
          !stderr.includes("unable to create native thread"),
-      // stderr is the program's to write, so on a hidden test only a name from
-      // this list may come back. Anything else could carry the hidden input.
+      // Only names from this list are shown, so hidden test input never leaks.
       crashNames: [
          "ArithmeticException",
          "ArrayIndexOutOfBoundsException",
@@ -55,19 +54,19 @@ const RUNNERS = {
    },
 };
 
-// judge.sh speaks in exit codes.
+// Exit codes used by judge.sh.
 const EXIT = { COMPILE_ERROR: 20, TIMEOUT: 124, KILLED: 137 };
 
 const canRun = (language) => Boolean(RUNNERS[language]);
 
-// Room for a correct answer of any size the problem allows.
+// Enough room for any correct answer.
 const outputLimitFor = (expectedOutput) =>
    Math.min(
       OUTPUT_MAX_BYTES,
       Math.max(OUTPUT_MIN_BYTES, 2 * Buffer.byteLength(expectedOutput) + 1024),
    );
 
-// The safe name of a crash: one listed name, or null. Never stderr's own text.
+// Returns a known crash name or null. Never the raw stderr.
 function crashName(language, stderr) {
    return (
       RUNNERS[language].crashNames.find((name) =>
@@ -78,7 +77,7 @@ function crashName(language, stderr) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Holds output up to a size limit and says when it went over.
+// Keeps output up to a limit and tells when it goes over.
 function collector(limit) {
    const chunks = [];
    let size = 0;
@@ -96,8 +95,7 @@ function collector(limit) {
 
 /* ---- the box: one container for one submission ------------------------ */
 
-// Kill and remove. Every caller waits on the same removal, so a second
-// call cannot return while the first is still deleting the container.
+// Kill and remove the box. Repeat calls wait on the same removal.
 function destroy(box) {
    box.dead = true;
    box.removing ??= box.container.remove({ force: true }).catch(() => {});
@@ -116,12 +114,12 @@ async function startBox(language, { memoryLimitMb }) {
          NetworkMode: "none",
          AutoRemove: true,
          Memory: memoryLimitMb * MB,
-         // Equal to memory, so there is no swap to hide in.
+         // Same as memory, so there is no swap.
          MemorySwap: memoryLimitMb * MB,
          NanoCpus: 1e9,
          PidsLimit: 64,
          ReadonlyRootfs: true,
-         // The only writable places, small and owned by the sandbox user.
+         // The only writable folders, small and owned by the sandbox user.
          Tmpfs: {
             "/box": "rw,size=64m,uid=1000,gid=1000,mode=700",
             "/tmp": "rw,size=16m,uid=1000,gid=1000,mode=700",
@@ -143,7 +141,7 @@ async function startBox(language, { memoryLimitMb }) {
    return box;
 }
 
-// The exit code lands a moment after the output stream closes.
+// The exit code shows up just after the output stream closes.
 async function exitCode(execution) {
    for (let attempt = 0; attempt < 50; attempt += 1) {
       const info = await execution.inspect();
@@ -155,8 +153,8 @@ async function exitCode(execution) {
    throw new Error("The program never reported an exit code");
 }
 
-// One command inside the box, to the end or until the timer or the output
-// limit stops it. Docker's own failures throw, so they end as SYSTEM_ERROR.
+// Runs one command in the box. Stops on timeout or too much output.
+// Docker errors throw and end as SYSTEM_ERROR.
 async function exec(
    box,
    cmd,
@@ -179,7 +177,7 @@ async function exec(
    let timedOut = false;
    let overflow = false;
 
-   // Closing the stream leaves the program running, so stopping kills the box.
+   // Closing the stream does not stop the program, so kill the box.
    const halt = () => {
       destroy(box);
       stream.destroy();
@@ -205,7 +203,7 @@ async function exec(
       halt();
    }, timeoutMs);
 
-   // Send the input and close stdin, so a program reading to the end stops.
+   // Send input and close stdin, so a program reading to the end can finish.
    stream.end(input);
    await finished;
    clearTimeout(timer);
@@ -213,7 +211,7 @@ async function exec(
    const ms = Number((process.hrtime.bigint() - started) / 1_000_000n);
 
    return {
-      // A killed box has no exit code to ask for.
+      // A killed box has no exit code.
       code: box.dead ? null : await exitCode(execution),
       timedOut,
       overflow,
@@ -223,7 +221,7 @@ async function exec(
    };
 }
 
-// A started box with the source in it, compiled. The caller must clean up.
+// Starts a box, copies the code in, and compiles it. Caller must clean up.
 async function prepare(language, sourceCode, limits) {
    const box = await startBox(language, limits);
 
@@ -262,15 +260,15 @@ async function prepare(language, sourceCode, limits) {
    }
 }
 
-// CPU used by everything in the box so far, from Docker's own counters.
+// Total CPU used in the box so far, from Docker stats.
 async function cpuNanos(box) {
    const stats = await box.container.stats({ stream: false, "one-shot": true });
 
    return stats.cpu_stats.cpu_usage.total_usage;
 }
 
-// One case, raw: the caller turns this into a verdict.
-// ms is CPU time. stop is true when the box had to be killed.
+// Runs one test case and returns raw results for the caller to judge.
+// ms is CPU time. stop is true if the box was killed.
 async function runOne(box, testCase, { timeLimitMs }) {
    const runner = RUNNERS[box.language];
    const wallMs = wallCapMs(timeLimitMs);
@@ -283,12 +281,12 @@ async function runOne(box, testCase, { timeLimitMs }) {
       { input: testCase.input, timeoutMs: wallMs + WALL_GRACE_MS, outputLimit },
    );
 
-   // A killed box has no counters left, so wall time stands in.
+   // A killed box has no stats, so use wall time.
    const cpuMs = box.dead
       ? result.ms
       : Math.round((Number(await cpuNanos(box)) - Number(before)) / 1e6);
 
-   // We killed it, so there is no exit code to read anything from.
+   // We killed it, so its exit code tells us nothing.
    const stoppedByUs = result.timedOut || result.overflow;
 
    return {
@@ -298,7 +296,7 @@ async function runOne(box, testCase, { timeLimitMs }) {
       outputLimit,
       timedOut:
          result.timedOut || result.code === EXIT.TIMEOUT || cpuMs > timeLimitMs,
-      // 137 is the kernel's out-of-memory kill. The JVM may also catch it first.
+      // 137 means out of memory. The JVM may also catch it first.
       outOfMemory:
          !stoppedByUs &&
          (result.code === EXIT.KILLED || runner.outOfMemory(result.stderr)),
@@ -311,7 +309,7 @@ const cleanup = (box) => destroy(box);
 
 /* ---- housekeeping ------------------------------------------------------ */
 
-// Boxes left by a crash or a restart. Nothing should be running at startup.
+// Removes boxes left over from a crash or restart.
 async function removeLeftovers() {
    const rows = await docker.listContainers({
       all: true,
@@ -330,7 +328,7 @@ async function removeLeftovers() {
    return rows.length;
 }
 
-// The images every language needs. Missing ones are built by npm run judge:images.
+// Lists missing images. Build them with npm run judge:images.
 async function missingImages() {
    const missing = [];
 
