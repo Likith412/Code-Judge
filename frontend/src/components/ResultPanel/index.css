@@ -113,12 +113,40 @@
 
 @media (prefers-reduced-motion: reduce) {
    .verdict-pulse,
+   .result-spinner,
    .result-accepted {
       animation: none;
    }
 }
 
 /* ---- the body ------------------------------------------------------ */
+
+/* While queued or running: one status in the middle of the panel. */
+.result-waiting {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   gap: 8px;
+   height: 100%;
+   min-height: 120px;
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}
+
+.result-spinner {
+   width: 14px;
+   height: 14px;
+   border: 2px solid var(--color-neutral-300);
+   border-top-color: var(--color-text);
+   border-radius: 50%;
+   animation: result-spin 0.8s linear infinite;
+}
+
+@keyframes result-spin {
+   to {
+      transform: rotate(360deg);
+   }
+}
 
 .result-line {
    display: flex;

@@ -86,8 +86,13 @@ const ResultPanel = (props) => {
       </p>
    );
 
-   // One status only: Queued, then Running.
-   const renderPending = () => <VerdictTag status={submission.status} />;
+   // One status, centred: Queued…, then Running….
+   const renderPending = () => (
+      <div className="result-waiting" role="status">
+         <span className="result-spinner" />
+         {STATUS_LABEL[submission.status]}…
+      </div>
+   );
 
    const renderError = (text, extra = "") =>
       text && <pre className={`result-error ${extra}`}>{text}</pre>;
