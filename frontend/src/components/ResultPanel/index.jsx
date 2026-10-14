@@ -1,19 +1,9 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { LANG_LABEL, RUNNABLE } from "../../utils/languages";
 import { STATUS_LABEL, isPending, statusTone } from "../../utils/verdicts";
 
 import "./index.css";
-
-// After this long, queued stops looking like a flicker and gets explained.
-const QUEUED_LONG_MS = 6000;
-
-const elapsedText = (ms) => {
-   const seconds = Math.floor(ms / 1000);
-
-   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-};
 
 const VerdictTag = ({ status, children }) => (
    <span className={`verdict verdict-${statusTone(status)}`}>
@@ -76,17 +66,6 @@ const ResultPanel = (props) => {
    const runnable = RUNNABLE.includes(language);
    const canPress = signedIn && solves && runnable && !sending && !pending;
 
-   // Ticks once a second, only while something is waiting.
-   const [now, setNow] = useState(() => Date.now());
-
-   useEffect(() => {
-      if (!pending) return undefined;
-
-      const timer = setInterval(() => setNow(Date.now()), 1000);
-
-      return () => clearInterval(timer);
-   }, [pending]);
-
    const gate = () => {
       if (!signedIn) return "Running code needs an account.";
       if (!solves) return "Setters and admins cannot run or submit.";
@@ -107,44 +86,8 @@ const ResultPanel = (props) => {
       </p>
    );
 
-   // A sample run is quick and kept for a day only, so it gets no queue view.
-   const renderRunning = () => (
-      <div className="result-running">
-         <span className="result-running-mark" />
-         Running {problem.sampleCount} samples…
-      </div>
-   );
-
-   const renderPending = () => {
-      if (submission.isSampleRun) return renderRunning();
-
-      // The clock can lag the press by up to a tick, so never show a negative.
-      const waited = Math.max(0, now - attempt.startedAt);
-      const queued = submission.status === "QUEUED";
-
-      return (
-         <>
-            <div className="result-line">
-               <VerdictTag status={submission.status} />
-
-               <span className="result-elapsed">{elapsedText(waited)}</span>
-
-               <span className="result-progress">
-                  {queued ? "Waiting for a free worker" : "On a worker now"}
-               </span>
-            </div>
-
-            {queued && waited > QUEUED_LONG_MS && (
-               <p className="result-note">
-                  Still queued. Your submission is saved and runs as soon as the
-                  judge frees up. You can leave this page.
-               </p>
-            )}
-
-            <Segments submission={submission} gap="result-segs-wide" />
-         </>
-      );
-   };
+   // One status only: Queued, then Running.
+   const renderPending = () => <VerdictTag status={submission.status} />;
 
    const renderError = (text, extra = "") =>
       text && <pre className={`result-error ${extra}`}>{text}</pre>;

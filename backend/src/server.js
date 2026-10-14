@@ -8,6 +8,7 @@ const { connectRedis, disconnectRedis } = require("./config/redis");
 const { verifyMailer } = require("./config/mailer");
 const logger = require("./config/logger");
 const { queue } = require("./queue");
+const { attachSockets, closeSockets } = require("./sockets");
 const app = require("./app");
 
 const SHUTDOWN_TIMEOUT_MS = 10000;
@@ -26,6 +27,7 @@ async function startServer() {
       await verifyMailer();
 
       server = http.createServer(app);
+      await attachSockets(server);
 
       server.listen(PORT, () => {
          logger.info(`Server running on http://localhost:${PORT}`);
@@ -46,11 +48,8 @@ async function shutdown(signal) {
    forceExit.unref();
 
    try {
-      if (server) {
-         await new Promise((resolve, reject) => {
-            server.close((err) => (err ? reject(err) : resolve()));
-         });
-      }
+      // Open sockets would keep server.close() waiting, so this closes both.
+      if (server) await closeSockets();
       await queue.close();
       await disconnectRedis();
       await disconnectDatabase();

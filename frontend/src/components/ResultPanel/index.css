@@ -113,7 +113,6 @@
 
 @media (prefers-reduced-motion: reduce) {
    .verdict-pulse,
-   .result-running-mark,
    .result-accepted {
       animation: none;
    }
@@ -142,11 +141,6 @@
    color: var(--color-neutral-700);
 }
 
-.result-elapsed {
-   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-   font-size: 13px;
-   color: var(--color-neutral-700);
-}
 
 .result-meta {
    font-size: 14px;
@@ -158,27 +152,6 @@
    font-size: 13px;
 }
 
-.result-running {
-   display: flex;
-   align-items: center;
-   gap: 10px;
-   font-size: 14px;
-}
-
-.result-running-mark {
-   width: 10px;
-   height: 10px;
-   background: var(--color-text);
-   animation: result-pulse 1s ease-in-out infinite;
-}
-
-.result-note {
-   margin: 12px 0 0;
-   max-width: 60ch;
-   font-size: 13px;
-   line-height: 1.5;
-   color: var(--color-neutral-700);
-}
 
 .result-text {
    margin: 12px 0 0;
@@ -226,9 +199,6 @@
    margin-top: 10px;
 }
 
-.result-segs-wide {
-   margin-top: 14px;
-}
 
 .result-seg {
    flex: 1;

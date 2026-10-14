@@ -1,10 +1,12 @@
-// The submissions queue. The API adds jobs, the worker takes them.
+// The submissions queue, and the channel that says when a status changes.
 const { Queue } = require("bullmq");
 
+const logger = require("../config/logger");
 const { redis } = require("../config/redis");
 
 const QUEUE_NAME = "submissions";
 const JUDGE_JOB = "judge";
+const STATUS_CHANNEL = "submission-status";
 
 // One try plus two retries, only on SYSTEM_ERROR.
 const JOB_OPTIONS = {
@@ -28,4 +30,25 @@ const addJudgeJob = (submissionId) =>
       { jobId: String(submissionId) },
    );
 
-module.exports = { QUEUE_NAME, queue, addJudgeJob };
+// Tells the API, which tells the browser. Missing one is fine: the page polls too.
+async function publishStatus(submission, status) {
+   const message = {
+      id: String(submission._id),
+      userId: String(submission.userId),
+      status,
+   };
+
+   try {
+      await redis.publish(STATUS_CHANNEL, JSON.stringify(message));
+   } catch (err) {
+      logger.warn({ err: err.message, ...message }, "could not publish status");
+   }
+}
+
+module.exports = {
+   QUEUE_NAME,
+   STATUS_CHANNEL,
+   queue,
+   addJudgeJob,
+   publishStatus,
+};

@@ -1,7 +1,7 @@
 // Judges one submission. Only the worker runs this, never the API.
 const logger = require("../config/logger");
 const { Problem, Submission, TestCase } = require("../models");
-const { addJudgeJob } = require("../queue");
+const { addJudgeJob, publishStatus } = require("../queue");
 const { PENDING_STATUSES } = require("../utils/constants");
 const runner = require("./dockerRunner");
 const { runCases } = require("./runCases");
@@ -41,6 +41,8 @@ async function judgeJob(job) {
 
    if (!submission) return "SKIPPED";
 
+   await publishStatus(submission, "RUNNING");
+
    let fields;
 
    try {
@@ -52,6 +54,7 @@ async function judgeJob(job) {
       // Back in line. Throwing makes BullMQ retry after a pause.
       if (attempt < (job.opts.attempts ?? 1)) {
          await Submission.updateOne({ _id: id }, { $set: { status: "QUEUED" } });
+         await publishStatus(submission, "QUEUED");
          throw err;
       }
 
@@ -62,6 +65,7 @@ async function judgeJob(job) {
       { _id: id },
       { $set: { ...fields, judgedAt: new Date() } },
    );
+   await publishStatus(submission, fields.status);
 
    return fields.status;
 }

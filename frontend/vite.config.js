@@ -9,6 +9,8 @@ export default defineConfig({
          "/api": {
             target: "http://localhost:3000",
             changeOrigin: true,
+            // The live status socket lives under /api too.
+            ws: true,
          },
       },
    },

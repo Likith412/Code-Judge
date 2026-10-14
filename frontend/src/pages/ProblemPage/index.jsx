@@ -8,6 +8,7 @@ import {
    getSubmission,
 } from "../../services/api/submissions";
 import { apiError } from "../../services/api/client";
+import { watchSubmission } from "../../services/socket";
 import DifficultyTag from "../../components/DifficultyTag";
 import CopyButton from "../../components/CopyButton";
 import FailureView from "../../components/FailureView";
@@ -30,9 +31,6 @@ const apiStatusConstants = {
 const SPLIT = { start: 46, min: 25, max: 75 };
 const RESULT = { start: 260, min: 120, max: 520 };
 const NARROW = 900;
-
-// Once a second until the verdict lands. Phase 7 swaps this for a socket.
-const POLL_MS = 1000;
 
 const mobileTabs = [
    { value: "problem", label: "Problem" },
@@ -63,7 +61,7 @@ const ProblemPage = () => {
    const [resetConfirm, setResetConfirm] = useState(false);
    const [view, setView] = useState({ height: 0, width: 0, narrow: false });
 
-   // The latest Run or Submit: { submission, startedAt } or { error }.
+   // The latest Run or Submit: { submission } or { error }.
    const [attempt, setAttempt] = useState(null);
    const [sending, setSending] = useState(false);
 
@@ -72,14 +70,13 @@ const ProblemPage = () => {
          ? attempt.submission.id
          : null;
 
-   // Ask again until the verdict lands. A failed poll just waits a bit longer.
+   // The socket gives the status. The result is fetched once the verdict lands.
    useEffect(() => {
       if (!pendingId) return undefined;
 
       let cancelled = false;
-      let timer;
 
-      const poll = async () => {
+      const fetchSubmission = async () => {
          try {
             const data = await getSubmission(pendingId);
 
@@ -90,19 +87,28 @@ const ProblemPage = () => {
                   ? { ...current, submission: data.submission }
                   : current,
             );
-
-            if (isPending(data.submission.status))
-               timer = setTimeout(poll, POLL_MS);
          } catch {
-            if (!cancelled) timer = setTimeout(poll, POLL_MS * 3);
+            // The next push or reconnect asks again.
          }
       };
 
-      timer = setTimeout(poll, POLL_MS);
+      // QUEUED or RUNNING carries nothing new, so no call is needed for it.
+      const onPush = (status) => {
+         if (!isPending(status)) return fetchSubmission();
+
+         setAttempt((current) =>
+            current?.submission?.id === pendingId
+               ? { ...current, submission: { ...current.submission, status } }
+               : current,
+         );
+      };
+
+      // A push sent while the socket was connecting is lost, so check on connect.
+      const stopWatching = watchSubmission(pendingId, onPush, fetchSubmission);
 
       return () => {
          cancelled = true;
-         clearTimeout(timer);
+         stopWatching();
       };
    }, [pendingId]);
 
@@ -186,7 +192,7 @@ const ProblemPage = () => {
             isSampleRun,
          });
 
-         setAttempt({ submission: data.submission, startedAt: Date.now() });
+         setAttempt({ submission: data.submission });
       } catch (error) {
          setAttempt({ error: apiError(error).message });
       } finally {

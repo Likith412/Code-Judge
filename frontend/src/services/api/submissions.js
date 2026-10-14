@@ -1,6 +1,6 @@
 import client from "./client";
 
-// Run sends isSampleRun true. The answer comes back QUEUED, then gets polled.
+// Run sends isSampleRun true. The answer comes back QUEUED.
 function createSubmission(body) {
    return client.post("/submissions", body).then((response) => response.data);
 }
