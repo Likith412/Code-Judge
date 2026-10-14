@@ -45,8 +45,8 @@ const Segments = ({ submission, gap = "" }) => {
    );
 };
 
-const OutputBox = ({ label, text, mine }) => (
-   <div className="result-io-box">
+const OutputBox = ({ label, text, mine, passed }) => (
+   <div className={passed ? "result-io-box result-io-pass" : "result-io-box"}>
       <div
          className={mine ? "result-io-label result-io-mine" : "result-io-label"}
       >
@@ -149,7 +149,7 @@ const ResultPanel = (props) => {
    const renderError = (text, extra = "") =>
       text && <pre className={`result-error ${extra}`}>{text}</pre>;
 
-   // Run: every sample gets a row, failures show what came out.
+   // Run: every sample gets a row with its input and output.
    const renderSampleRun = () => {
       const rows = submission.sampleResults || [];
       const passed = rows.filter((row) => row.status === "ACCEPTED").length;
@@ -202,21 +202,20 @@ const ResultPanel = (props) => {
                            )}
                         </div>
 
-                        {/* Samples need not match the examples, so show what ran. */}
-                        {!ok && (
-                           <div className="result-io-grid result-io-grid-run">
-                              <OutputBox label="Input" text={row.input} />
-                              <OutputBox
-                                 label="Expected"
-                                 text={row.expectedOutput}
-                              />
-                              <OutputBox
-                                 label="Your output"
-                                 text={row.actualOutput}
-                                 mine
-                              />
-                           </div>
-                        )}
+                        {/* Every sample shows what ran, passed or not. */}
+                        <div className="result-io-grid result-io-grid-run">
+                           <OutputBox label="Input" text={row.input} />
+                           <OutputBox
+                              label="Expected"
+                              text={row.expectedOutput}
+                           />
+                           <OutputBox
+                              label="Your output"
+                              text={row.actualOutput}
+                              mine
+                              passed={ok}
+                           />
+                        </div>
                      </div>
                   );
                })}

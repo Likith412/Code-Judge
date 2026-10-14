@@ -40,6 +40,11 @@
    --color-accent-2-800: #71261b;
    --color-accent-2-900: #471d16;
 
+   /* Only for output that passed. */
+   --color-success-100: #e8f5ea;
+   --color-success-700: #1e7a35;
+   --color-success-800: #155a27;
+
    --font-heading: "Archivo", system-ui, sans-serif;
    --font-body: "Archivo", system-ui, sans-serif;
 
