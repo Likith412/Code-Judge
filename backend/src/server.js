@@ -4,9 +4,10 @@ require("dotenv").config();
 
 const { PORT } = require("./config/env");
 const { connectDatabase, disconnectDatabase } = require("./config/db");
+const { connectRedis, disconnectRedis } = require("./config/redis");
 const { verifyMailer } = require("./config/mailer");
 const logger = require("./config/logger");
-const { resumeJudging, checkSandbox } = require("./judge");
+const { queue } = require("./queue");
 const app = require("./app");
 
 const SHUTDOWN_TIMEOUT_MS = 10000;
@@ -18,15 +19,11 @@ async function startServer() {
       await connectDatabase();
       logger.info("Database connected");
 
-      // A broken mail setup should be a warning at startup, not a failed registration an hour later.
+      await connectRedis();
+      logger.info("Redis connected");
+
+      // Warn about broken mail now, not on the first registration.
       await verifyMailer();
-
-      // Without Docker or its images the judge can only answer SYSTEM_ERROR. Say so now.
-      await checkSandbox();
-
-      // The judge queue is in memory, so anything left from the last run starts again.
-      const resumed = await resumeJudging();
-      if (resumed) logger.info(`Resumed judging ${resumed} submissions`);
 
       server = http.createServer(app);
 
@@ -54,6 +51,8 @@ async function shutdown(signal) {
             server.close((err) => (err ? reject(err) : resolve()));
          });
       }
+      await queue.close();
+      await disconnectRedis();
       await disconnectDatabase();
 
       clearTimeout(forceExit);

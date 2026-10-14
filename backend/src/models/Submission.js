@@ -52,7 +52,6 @@ const submissionSchema = new Schema(
 
       jobId: String,
       judgedAt: Date,
-      workerId: String,
    },
    { timestamps: true },
 );

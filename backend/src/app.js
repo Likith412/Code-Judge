@@ -12,6 +12,9 @@ const routes = require("./routes");
 
 const app = express();
 
+// Behind nginx in docker compose, so req.ip is the client, not nginx.
+app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(requestId);
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));

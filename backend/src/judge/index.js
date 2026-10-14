@@ -1,172 +1,60 @@
-// Judges submissions inside the API process. Phase 6 moves this to the worker.
-const os = require("node:os");
-
+// Judges one submission. Only the worker runs this, never the API.
 const logger = require("../config/logger");
 const { Problem, Submission, TestCase } = require("../models");
+const { addJudgeJob } = require("../queue");
 const { PENDING_STATUSES } = require("../utils/constants");
-const { outputMatches } = require("./compare");
 const runner = require("./dockerRunner");
+const { runCases } = require("./runCases");
 
-// More at once would starve the API of CPU. BullMQ takes over in phase 6.
-const MAX_RUNNING = 2;
+/* ---- one job, start to end -------------------------------------------- */
 
-// Long enough for a stack trace, short enough for a document.
-const MESSAGE_LIMIT = 8 * 1024;
-const SAMPLE_OUTPUT_LIMIT = 4 * 1024;
-
-const WORKER_ID = `api-${os.hostname()}-${process.pid}`;
-
-const cut = (text, limit) =>
-   text.length > limit
-      ? `${text.slice(0, limit)}\n… cut at ${limit} characters`
-      : text;
-
-/* ---- one case, raw result to verdict ---------------------------------- */
-
-// stderr is the program's to write: on a hidden test it could print the
-// input. So a hidden crash shows only a known exception name, or nothing.
-function crashMessage(raw, testCase) {
-   if (!testCase.isHidden) return raw.stderr || `Exited with code ${raw.code}`;
-
-   const what = raw.crashName || `Exited with code ${raw.code}`;
-
-   return `${what}\n\nThe full error is not shown for a hidden test.`;
-}
-
-function caseVerdict(raw, testCase, comparisonMode) {
-   if (raw.timedOut) return { status: "TIME_LIMIT_EXCEEDED" };
-   if (raw.outOfMemory) return { status: "MEMORY_LIMIT_EXCEEDED" };
-
-   if (raw.overflow) {
-      return {
-         status: "RUNTIME_ERROR",
-         message: `Printed more than ${Math.round(raw.outputLimit / 1024)} KB, so it was stopped.`,
-      };
-   }
-
-   if (raw.code !== 0) {
-      return { status: "RUNTIME_ERROR", message: crashMessage(raw, testCase) };
-   }
-
-   const passed = outputMatches(
-      raw.stdout,
-      testCase.expectedOutput,
-      comparisonMode,
+// Loads the problem and cases, then runs them. Throws if it cannot judge.
+async function judgeCases(submission) {
+   const problem = await Problem.findById(submission.problemId).select(
+      "timeLimitMs memoryLimitMb comparisonMode",
    );
+   const filter = { problemId: submission.problemId };
 
-   return { status: passed ? "ACCEPTED" : "WRONG_ANSWER" };
-}
+   if (submission.isSampleRun) filter.isHidden = false;
 
-// A sample is public, so what it was fed and what came out can be shown.
-const sampleResult = (position, testCase, raw, verdict) => ({
-   position,
-   status: verdict.status,
-   input: testCase.input,
-   expectedOutput: testCase.expectedOutput,
-   actualOutput: cut(raw.stdout, SAMPLE_OUTPUT_LIMIT),
-});
+   const cases = await TestCase.find(filter).sort({ order: 1 });
 
-/* ---- every case, to the fields a submission keeps --------------------- */
+   if (!problem || !cases.length) throw new Error("Nothing to judge against");
 
-// Submit stops at the first failure. Run goes through every sample.
-async function runCases(submission, problem, cases) {
-   const limits = {
-      timeLimitMs: problem.timeLimitMs,
-      memoryLimitMb: problem.memoryLimitMb,
+   return {
+      ...(await runCases(submission, problem, cases)),
+      totalTestCases: cases.length,
    };
-   const stopEarly = !submission.isSampleRun;
-
-   // The container is sized to this problem's memory limit.
-   const { box, compileError } = await runner.prepare(
-      submission.language,
-      submission.sourceCode,
-      limits,
-   );
-
-   try {
-      if (compileError) {
-         return {
-            status: "COMPILATION_ERROR",
-            testCasesPassed: 0,
-            errorMessage: cut(compileError, MESSAGE_LIMIT),
-         };
-      }
-
-      const fields = { status: "ACCEPTED", testCasesPassed: 0 };
-      const samples = [];
-
-      for (const [index, testCase] of cases.entries()) {
-         const position = index + 1;
-         const raw = await runner.runOne(box, testCase, limits);
-         const verdict = caseVerdict(raw, testCase, problem.comparisonMode);
-
-         if (submission.isSampleRun) {
-            samples.push(sampleResult(position, testCase, raw, verdict));
-         }
-
-         if (verdict.status === "ACCEPTED") {
-            fields.testCasesPassed += 1;
-            continue;
-         }
-
-         // The first failure decides the verdict, later ones only add rows.
-         if (fields.status === "ACCEPTED") {
-            fields.status = verdict.status;
-            fields.failedTestIndex = position;
-            if (verdict.message)
-               fields.errorMessage = cut(verdict.message, MESSAGE_LIMIT);
-
-            if (stopEarly && !testCase.isHidden) {
-               samples.push(sampleResult(position, testCase, raw, verdict));
-            }
-         }
-
-         // A killed box cannot run the next sample either.
-         if (stopEarly || raw.stop) break;
-      }
-
-      if (samples.length) fields.sampleResults = samples;
-
-      return fields;
-   } finally {
-      await runner.cleanup(box);
-   }
 }
 
-/* ---- one submission, start to end ------------------------------------- */
+// The worker runs this once per job. Returns the status, for the log.
+async function judgeJob(job) {
+   const id = job.data.submissionId;
+   const attempt = job.attemptsMade + 1;
 
-async function judgeSubmission(id) {
-   // Claim it, so a second call for the same id finds nothing to do.
+   // Skip rows with a verdict. A RUNNING row was left by a dead worker.
    const submission = await Submission.findOneAndUpdate(
-      { _id: id, status: "QUEUED" },
-      { $set: { status: "RUNNING", workerId: WORKER_ID } },
+      { _id: id, status: { $in: PENDING_STATUSES } },
+      { $set: { status: "RUNNING", jobId: job.id } },
       { returnDocument: "after" },
    );
 
-   if (!submission) return;
+   if (!submission) return "SKIPPED";
 
    let fields;
 
    try {
-      const problem = await Problem.findById(submission.problemId).select(
-         "timeLimitMs memoryLimitMb comparisonMode",
-      );
-      const filter = { problemId: submission.problemId };
-
-      if (submission.isSampleRun) filter.isHidden = false;
-
-      const cases = await TestCase.find(filter).sort({ order: 1 });
-
-      if (!problem || !cases.length)
-         throw new Error("Nothing to judge against");
-
-      fields = {
-         ...(await runCases(submission, problem, cases)),
-         totalTestCases: cases.length,
-      };
+      fields = await judgeCases(submission);
    } catch (err) {
       // Not the user's fault, so no message of ours reaches them.
-      logger.error({ err, submissionId: id }, "judging failed");
+      logger.error({ err, submissionId: id, attempt }, "judging failed");
+
+      // Back in line. Throwing makes BullMQ retry after a pause.
+      if (attempt < (job.opts.attempts ?? 1)) {
+         await Submission.updateOne({ _id: id }, { $set: { status: "QUEUED" } });
+         throw err;
+      }
+
       fields = { status: "SYSTEM_ERROR" };
    }
 
@@ -174,73 +62,35 @@ async function judgeSubmission(id) {
       { _id: id },
       { $set: { ...fields, judgedAt: new Date() } },
    );
+
+   return fields.status;
 }
 
-/* ---- a tiny in-memory queue ------------------------------------------- */
+/* ---- worker startup --------------------------------------------------- */
 
-const waiting = [];
-let running = 0;
-
-function drain() {
-   while (running < MAX_RUNNING && waiting.length) {
-      const id = waiting.shift();
-
-      running += 1;
-      judgeSubmission(id)
-         .catch((err) =>
-            logger.error({ err, submissionId: id }, "judge crashed"),
-         )
-         .finally(() => {
-            running -= 1;
-            drain();
-         });
-   }
-}
-
-function enqueue(id) {
-   waiting.push(String(id));
-   drain();
-}
-
-// Docker trouble is a warning, not a crash: the API serves everything but judging.
+// No Docker or images means nothing can be judged, so stop here.
 async function checkSandbox() {
-   try {
-      // Their submissions start over in resumeJudging, so old boxes are of no use.
-      const removed = await runner.removeLeftovers();
-      if (removed) logger.info(`Removed ${removed} leftover sandboxes`);
+   // Their jobs run again, so old boxes are of no use.
+   const removed = await runner.removeLeftovers();
+   if (removed) logger.info(`Removed ${removed} leftover sandboxes`);
 
-      const missing = await runner.missingImages();
-      if (missing.length) {
-         logger.warn(
-            `Judge images missing: ${missing.join(", ")}. Run npm run judge:images`,
-         );
-      }
-   } catch (err) {
-      logger.warn({ err }, "Docker is not reachable, so nothing can be judged");
+   const missing = await runner.missingImages();
+   if (missing.length) {
+      throw new Error(
+         `Judge images missing: ${missing.join(", ")}. Run npm run judge:images`,
+      );
    }
 }
 
-// The queue lives in memory, so a restart loses it. Pick up what was left.
-async function resumeJudging() {
-   const stuck = await Submission.find({ status: { $in: PENDING_STATUSES } })
+// Re-adds every unfinished row, in case Redis lost its job. Live jobs stay as is.
+async function requeuePending() {
+   const rows = await Submission.find({ status: { $in: PENDING_STATUSES } })
       .sort({ createdAt: 1 })
       .select("_id");
 
-   if (!stuck.length) return 0;
+   for (const row of rows) await addJudgeJob(row._id);
 
-   await Submission.updateMany(
-      { _id: { $in: stuck.map((row) => row._id) } },
-      { $set: { status: "QUEUED" } },
-   );
-
-   stuck.forEach((row) => enqueue(row._id));
-
-   return stuck.length;
+   return rows.length;
 }
 
-module.exports = {
-   enqueue,
-   resumeJudging,
-   canRun: runner.canRun,
-   checkSandbox,
-};
+module.exports = { judgeJob, checkSandbox, requeuePending };

@@ -9,6 +9,7 @@ const STATUS = {
    VALIDATION_ERROR: 422,
    RATE_LIMITED: 429,
    INTERNAL: 500,
+   UNAVAILABLE: 503,
 
    // Auth codes
    INVALID_CREDENTIALS: 401,
@@ -53,6 +54,9 @@ class ApiError extends Error {
    }
    static rateLimited(m = "Too many requests") {
       return new ApiError("RATE_LIMITED", m);
+   }
+   static unavailable(m = "Try again soon") {
+      return new ApiError("UNAVAILABLE", m);
    }
 }
 

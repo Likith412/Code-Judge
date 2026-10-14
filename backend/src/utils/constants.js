@@ -1,5 +1,7 @@
 // Lists used by both the schemas and the validators, so they cannot drift.
 const LANGUAGES = ["java", "python", "cpp"];
+// The ones the worker has an image for. Python and C++ come in phase 8.
+const JUDGED_LANGUAGES = ["java"];
 const DIFFICULTIES = ["EASY", "MEDIUM", "HARD"];
 const COMPARISON_MODES = ["EXACT", "TRIM"];
 
@@ -21,6 +23,7 @@ const RESERVED_SLUGS = ["tags"];
 
 module.exports = {
    LANGUAGES,
+   JUDGED_LANGUAGES,
    DIFFICULTIES,
    COMPARISON_MODES,
    PENDING_STATUSES,

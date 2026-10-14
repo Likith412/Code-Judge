@@ -1,7 +1,13 @@
 // Shared by the submission handlers. Nothing here touches res: it returns a value.
 const { Problem, Submission, TestCase } = require("../../models");
 const { ApiError } = require("../../utils/ApiError");
-const { canRun } = require("../../judge");
+const {
+   JUDGED_LANGUAGES,
+   PENDING_STATUSES,
+} = require("../../utils/constants");
+
+// At most this many waiting at once, per user.
+const MAX_WAITING = 5;
 
 /* ---- before saving ---------------------------------------------------- */
 
@@ -15,12 +21,26 @@ async function loadSolvableProblem(problemId, language) {
       throw ApiError.badRequest("This problem does not take that language");
    }
 
-   // The local judge only knows Java until phase 8.
-   if (!canRun(language)) {
+   // The worker only knows Java until phase 8.
+   if (!JUDGED_LANGUAGES.includes(language)) {
       throw ApiError.badRequest("Only Java can run for now");
    }
 
    return problem;
+}
+
+// One user cannot fill the queue.
+async function checkWaiting(userId) {
+   const waiting = await Submission.countDocuments({
+      userId,
+      status: { $in: PENDING_STATUSES },
+   });
+
+   if (waiting >= MAX_WAITING) {
+      throw ApiError.rateLimited(
+         `You already have ${MAX_WAITING} waiting to be judged. Wait for one to finish.`,
+      );
+   }
 }
 
 // Run checks the samples, Submit checks everything.
@@ -31,7 +51,7 @@ const countCases = (problemId, isSampleRun) =>
 
 /* ---- reading one back ------------------------------------------------- */
 
-// The author reads their own. An admin reads anyone's. Everyone else gets a 404.
+// Author or admin only. Anyone else gets a 404.
 async function loadVisibleSubmission(id, user) {
    const submission = await Submission.findById(id);
    const mayRead =
@@ -63,6 +83,7 @@ const submissionView = (row) => ({
 
 module.exports = {
    loadSolvableProblem,
+   checkWaiting,
    countCases,
    loadVisibleSubmission,
    submissionView,

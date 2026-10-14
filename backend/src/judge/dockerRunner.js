@@ -12,19 +12,18 @@ const OUTPUT_MAX_BYTES = 8 * 1024 * 1024;
 const STDERR_LIMIT_BYTES = 64 * 1024;
 const COMPILE_TIMEOUT_MS = 30_000;
 
-// The time limit is CPU time. Wall time gets extra room,
-// but still stops a program that just sleeps or waits.
+// The limit is CPU time. Wall time gets extra room but still stops sleepers.
 const wallCapMs = (timeLimitMs) => timeLimitMs * 2 + 500;
 
 // After the wall cap plus this, we kill the container ourselves.
 const WALL_GRACE_MS = 2_000;
 
-// Every box gets this label, so we can clean up leftovers after a restart.
+// Label on every box, so leftovers can be found after a restart.
 const BOX_LABEL = "code-judge.box";
 
 const MB = 1024 * 1024;
 
-// One image per language. Python and C++ come in phase 8.
+// One image per language. Keep JUDGED_LANGUAGES in utils/constants.js in step.
 const RUNNERS = {
    java: {
       image: "code-judge-java",
@@ -56,8 +55,6 @@ const RUNNERS = {
 
 // Exit codes used by judge.sh.
 const EXIT = { COMPILE_ERROR: 20, TIMEOUT: 124, KILLED: 137 };
-
-const canRun = (language) => Boolean(RUNNERS[language]);
 
 // Enough room for any correct answer.
 const outputLimitFor = (expectedOutput) =>
@@ -154,7 +151,6 @@ async function exitCode(execution) {
 }
 
 // Runs one command in the box. Stops on timeout or too much output.
-// Docker errors throw and end as SYSTEM_ERROR.
 async function exec(
    box,
    cmd,
@@ -203,7 +199,7 @@ async function exec(
       halt();
    }, timeoutMs);
 
-   // Send input and close stdin, so a program reading to the end can finish.
+   // Send input, then close stdin so the program sees the end.
    stream.end(input);
    await finished;
    clearTimeout(timer);
@@ -267,8 +263,7 @@ async function cpuNanos(box) {
    return stats.cpu_stats.cpu_usage.total_usage;
 }
 
-// Runs one test case and returns raw results for the caller to judge.
-// ms is CPU time. stop is true if the box was killed.
+// Runs one test case. ms is CPU time, stop means the box was killed.
 async function runOne(box, testCase, { timeLimitMs }) {
    const runner = RUNNERS[box.language];
    const wallMs = wallCapMs(timeLimitMs);
@@ -345,7 +340,6 @@ async function missingImages() {
 }
 
 module.exports = {
-   canRun,
    prepare,
    runOne,
    cleanup,

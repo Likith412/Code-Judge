@@ -28,6 +28,9 @@ const schema = z.object({
 
    // Where the judge reaches Docker. Empty means find the local socket.
    DOCKER_HOST: z.string().default(""),
+
+   // The submission queue. The default is docker compose's Redis.
+   REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
 });
 
 const result = schema.safeParse(process.env);
