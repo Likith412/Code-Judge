@@ -1,16 +1,5 @@
-# The whole stack. Two ways to use it:
-#
-#   Everything in containers, the web app on http://localhost:8080
-#     docker compose up -d --build
-#
-#   Only the databases, with the API, worker and web app on the host
-#     docker compose up -d mongo mongo-init redis
-#     then npm run dev and npm run worker in backend/
-#
-#   docker compose down            stop it, keep the data
-#   docker compose down -v         stop it and throw the data away
-#
-# The api service reads backend/.env, so copy backend/.env.example first.
+# The whole stack, web app on http://localhost:8080. Copy backend/.env.example
+# to backend/.env, then: docker compose up -d --build (down -v wipes the data)
 
 services:
    mongo:
@@ -29,7 +18,7 @@ services:
          timeout: 5s
          retries: 5
 
-   # Runs once and exits. Already going, and it does nothing.
+   # Starts the replica set once, then exits.
    mongo-init:
       image: mongo:8
       container_name: code-judge-mongo-init
@@ -65,21 +54,21 @@ services:
          timeout: 5s
          retries: 5
 
-   # Builds the Java sandbox image, then exits. Same as npm run judge:images.
+   # Builds the Java sandbox image, then exits.
    judge-java:
       build: ./backend/src/judge/images/java
       image: code-judge-java
       command: ["true"]
       restart: "no"
 
-   # Takes requests and queues submissions. No Docker access.
+   # Takes requests and queues submissions.
    api:
       build: ./backend
       container_name: code-judge-api
       restart: unless-stopped
       init: true
       env_file: ./backend/.env
-      # Overrides for compose. The rest comes from backend/.env.
+      # Overrides backend/.env for compose.
       environment:
          NODE_ENV: production
          MONGO_URI: mongodb://mongo:27017/code-judge?replicaSet=rs0
@@ -103,8 +92,7 @@ services:
          timeout: 5s
          retries: 5
 
-   # Judges submissions in sandbox containers. Same image as the API.
-   # Run only one per Docker host: it clears all sandboxes on start.
+   # Judges submissions. Run only one per Docker host.
    worker:
       build: ./backend
       container_name: code-judge-worker
@@ -117,13 +105,13 @@ services:
          MONGO_URI: mongodb://mongo:27017/code-judge?replicaSet=rs0
          REDIS_URL: redis://redis:6379
          DOCKER_HOST: unix:///var/run/docker.sock
-      # Whoever holds this socket controls Docker, so only the worker gets it.
+      # Only the worker gets the Docker socket.
       volumes:
          - /var/run/docker.sock:/var/run/docker.sock
-      # The socket's group, so the worker is not root. On Linux set DOCKER_GID.
+      # The socket's group, so it need not run as root.
       group_add:
          - "${DOCKER_GID:-0}"
-      # Lets a running job finish before it stops.
+      # Time for a running job to finish.
       stop_grace_period: 70s
       depends_on:
          mongo:
