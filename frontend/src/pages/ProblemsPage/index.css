@@ -86,12 +86,35 @@
    color: var(--color-neutral-700);
 }
 
+/* Only on narrow screens. */
+.problems-filter-bar {
+   display: none;
+}
+
 /* ---- tablet ------------------------------------------------------------ */
 
 @media (max-width: 760px) {
    .problems-layout {
       grid-template-columns: minmax(0, 1fr);
-      gap: var(--space-6);
+      gap: 0;
+   }
+
+   /* Folded away until Filters is pressed, so the list comes first. */
+   .problems-filter-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 12px 0 4px;
+   }
+
+   .problems-rail-wrap {
+      display: none;
+      padding-bottom: var(--space-4);
+      border-bottom: 1px solid var(--color-divider);
+   }
+
+   .problems-rail-open {
+      display: block;
    }
 }
 
@@ -107,5 +130,14 @@
    .problems-sort {
       width: 100%;
       max-width: none;
+   }
+
+   /* Smaller on a phone. The search stays 16px, or iPhone zooms in on it. */
+   .problems-title {
+      font-size: 26px;
+   }
+
+   .problems-rail .filter-group-button {
+      font-size: 13px;
    }
 }

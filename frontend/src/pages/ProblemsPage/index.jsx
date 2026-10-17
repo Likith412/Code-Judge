@@ -58,6 +58,9 @@ const ProblemsPage = () => {
    const [knownTags, setKnownTags] = useState([]);
    const [reloadCount, setReloadCount] = useState(0);
 
+   // Phones only: the filters fold away so the list comes first.
+   const [showFilters, setShowFilters] = useState(false);
+
    // The url is the only place filters live, so back and forward both work.
    useEffect(() => {
       let cancelled = false;
@@ -183,6 +186,13 @@ const ProblemsPage = () => {
       status !== "PUBLISHED",
    );
 
+   const activeFilters =
+      (difficulty ? 1 : 0) +
+      (progress ? 1 : 0) +
+      (mine ? 1 : 0) +
+      (status !== "PUBLISHED" ? 1 : 0) +
+      tags.length;
+
    const countText = () => {
       if (!result) return "Loading…";
 
@@ -293,19 +303,50 @@ const ProblemsPage = () => {
             </form>
          </header>
 
+         {/* Hidden on wider screens, where the filters always show. */}
+         <div className="problems-filter-bar">
+            <button
+               type="button"
+               className="btn btn-secondary problems-filter-toggle"
+               onClick={() => setShowFilters((open) => !open)}
+               aria-expanded={showFilters}
+            >
+               {showFilters ? "Hide filters" : "Filters"}
+               {activeFilters > 0 && ` · ${activeFilters}`}
+            </button>
+
+            {activeFilters > 0 && (
+               <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setSearchParams(q ? { q } : {})}
+               >
+                  Clear
+               </button>
+            )}
+         </div>
+
          <div className="problems-layout">
-            <ProblemFilters
-               difficulty={difficulty}
-               progress={progress}
-               status={status}
-               mine={mine}
-               tags={tags}
-               tagCounts={knownTags}
-               solves={solves}
-               canSeeDrafts={canSeeDrafts}
-               onPick={setParams}
-               onToggleTag={onToggleTag}
-            />
+            <div
+               className={
+                  showFilters
+                     ? "problems-rail-wrap problems-rail-open"
+                     : "problems-rail-wrap"
+               }
+            >
+               <ProblemFilters
+                  difficulty={difficulty}
+                  progress={progress}
+                  status={status}
+                  mine={mine}
+                  tags={tags}
+                  tagCounts={knownTags}
+                  solves={solves}
+                  canSeeDrafts={canSeeDrafts}
+                  onPick={setParams}
+                  onToggleTag={onToggleTag}
+               />
+            </div>
 
             <section className="problems-list">{renderBody()}</section>
          </div>

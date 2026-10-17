@@ -23,8 +23,10 @@ const apiStatusConstants = {
 };
 
 // Read only: no cursor line, no minimap, no scrolling past the end.
+// Long lines wrap, so a phone shows the whole line.
 const VIEWER_OPTIONS = {
    readOnly: true,
+   wordWrap: "on",
    domReadOnly: true,
    minimap: { enabled: false },
    scrollBeyondLastLine: false,

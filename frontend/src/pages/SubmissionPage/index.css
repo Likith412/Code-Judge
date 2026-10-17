@@ -131,9 +131,17 @@
    color: var(--color-neutral-700);
 }
 
-/* Two columns need 700px; below that the code sits on top. */
+/* One column on a phone: the result first, then a shorter code box. */
 @media (max-width: 760px) {
    .sub-grid {
       grid-template-columns: minmax(0, 1fr);
+   }
+
+   .sub-grid > section:last-child {
+      order: -1;
+   }
+
+   .sub-code {
+      height: 360px;
    }
 }
