@@ -61,7 +61,7 @@
    color: var(--color-neutral-700);
 }
 
-/* Ink on light, the design's way of marking something that just happened. */
+/* Ink on light marks something that just happened. */
 .settings-done {
    padding: 12px 14px;
    background: var(--color-text);

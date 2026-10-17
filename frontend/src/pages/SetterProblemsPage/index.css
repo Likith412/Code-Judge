@@ -1,0 +1,131 @@
+/* The same rules and type as the Submissions list. */
+
+.setter-header {
+   display: flex;
+   align-items: flex-end;
+   justify-content: space-between;
+   gap: 16px;
+   flex-wrap: wrap;
+   padding-bottom: var(--space-4);
+   border-bottom: 2px solid var(--color-divider);
+}
+
+.setter-heading {
+   margin: 0 0 var(--space-1);
+   font-size: 32px;
+}
+
+.setter-count {
+   font-size: 13px;
+   color: var(--color-neutral-700);
+}
+
+.setter-head,
+.setter-row {
+   display: grid;
+   grid-template-columns: minmax(0, 1fr) 110px 100px 60px 70px;
+   gap: 0 12px;
+   align-items: center;
+}
+
+.setter-head {
+   padding: 8px 0;
+   border-bottom: 2px solid var(--color-divider);
+   font-size: 11px;
+   letter-spacing: 0.08em;
+   text-transform: uppercase;
+   color: var(--color-neutral-700);
+}
+
+.setter-row {
+   padding: 10px 0;
+   border-bottom: 1px solid var(--color-divider);
+   font-size: 14px;
+   cursor: pointer;
+}
+
+/* The same hover as a row on the problem list. */
+.setter-row:hover {
+   background: rgba(32, 30, 29, 0.04);
+}
+
+.setter-title {
+   min-width: 0;
+   overflow: hidden;
+   font-weight: 600;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+}
+
+/* Draft is grey and dashed, like the editor's draft bar. Published is ink. */
+.setter-status {
+   display: inline-block;
+   padding: 2px 8px;
+   border: 1px dashed var(--color-neutral-500);
+   font-size: 11px;
+   font-weight: 600;
+   letter-spacing: 0.06em;
+   text-transform: uppercase;
+   color: var(--color-neutral-700);
+}
+
+.setter-status-live {
+   border: 1px solid var(--color-text);
+   background: var(--color-text);
+   color: var(--color-bg);
+}
+
+.setter-num {
+   font-variant-numeric: tabular-nums;
+}
+
+.setter-actions {
+   display: flex;
+   justify-content: flex-end;
+}
+
+/* A small button, so it reads as an action apart from the row. */
+.setter-edit {
+   padding: 4px 12px;
+   font-size: 13px;
+   text-decoration: none;
+}
+
+.setter-empty {
+   padding: 48px 0;
+   border-bottom: 1px solid var(--color-divider);
+}
+
+.setter-empty-title {
+   margin-bottom: 6px;
+   font-family: var(--font-heading);
+   font-size: 20px;
+   font-weight: 800;
+}
+
+.setter-empty-body {
+   margin: 0 0 var(--space-4);
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}
+
+.setter-loading {
+   padding: 24px 0;
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}
+
+/* Difficulty and the count drop out on a phone. */
+@media (max-width: 640px) {
+   .setter-head,
+   .setter-row {
+      grid-template-columns: minmax(0, 1fr) 90px auto;
+   }
+
+   .setter-head > :nth-child(3),
+   .setter-head > :nth-child(4),
+   .setter-row > :nth-child(3),
+   .setter-row > :nth-child(4) {
+      display: none;
+   }
+}

@@ -1,0 +1,51 @@
+/* Draft is a dashed grey band. Published is solid ink, so it cannot be missed. */
+.pub-bar {
+   display: flex;
+   align-items: center;
+   gap: 16px;
+   flex-wrap: wrap;
+   padding: 12px 16px;
+   border: 2px dashed var(--color-neutral-500);
+   background: var(--color-surface);
+   color: var(--color-text);
+}
+
+.pub-bar-live {
+   border: 0;
+   background: var(--color-text);
+   color: var(--color-bg);
+}
+
+.pub-label {
+   font-family: var(--font-heading);
+   font-size: 18px;
+   font-weight: 800;
+   letter-spacing: 0.02em;
+}
+
+.pub-body {
+   flex: 1;
+   min-width: 200px;
+   font-size: 13px;
+}
+
+.pub-button {
+   padding: 8px 14px;
+   border: 1px solid var(--color-accent);
+   background: var(--color-accent);
+   font-family: var(--font-heading);
+   font-size: 14px;
+   font-weight: 800;
+   color: var(--color-bg);
+   cursor: pointer;
+}
+
+.pub-bar-live .pub-button {
+   border-color: var(--color-bg);
+   background: transparent;
+}
+
+.pub-button:disabled {
+   opacity: 0.45;
+   cursor: not-allowed;
+}

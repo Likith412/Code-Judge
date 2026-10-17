@@ -1,0 +1,127 @@
+.cases-top {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 16px;
+   flex-wrap: wrap;
+   margin-bottom: 16px;
+}
+
+.cases-count-line {
+   margin: 0 0 16px;
+   font-size: 14px;
+   color: var(--color-neutral-700);
+   font-variant-numeric: tabular-nums;
+}
+
+/* The numbers stand out, the words stay grey. */
+.cases-count-line strong {
+   font-weight: 700;
+   color: var(--color-text);
+}
+
+.cases-note-text {
+   margin: 16px 0 0;
+   font-size: 13px;
+   color: var(--color-neutral-700);
+}
+
+.cases-head,
+.cases-row {
+   display: grid;
+   grid-template-columns: 40px 110px minmax(0, 1fr) minmax(0, 1fr) 72px 36px;
+   gap: 8px 12px;
+   align-items: start;
+}
+
+.cases-head {
+   padding: 8px 0;
+   border-bottom: 2px solid var(--color-divider);
+   font-size: 11px;
+   letter-spacing: 0.08em;
+   text-transform: uppercase;
+   color: var(--color-neutral-700);
+}
+
+.cases-row {
+   padding: 12px 0;
+   border-bottom: 1px solid var(--color-divider);
+}
+
+.cases-num {
+   padding-top: 8px;
+   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+   font-size: 14px;
+}
+
+/* Hidden is solid ink, sample is plain, so the column reads at a glance. */
+.cases-vis {
+   font-size: 14px;
+   font-weight: 600;
+   cursor: pointer;
+}
+
+.cases-vis-hidden {
+   border-color: var(--color-text);
+   background-color: var(--color-text);
+   color: var(--color-bg);
+}
+
+/* 13px, like every other monospace field. */
+textarea.cases-text {
+   min-height: 72px;
+   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+   font-size: 13px;
+}
+
+.cases-weight {
+   text-align: right;
+}
+
+/* Under the input and output columns. */
+.cases-note {
+   grid-column: 3 / 5;
+}
+
+.cases-row-foot {
+   grid-column: 3 / -1;
+   display: flex;
+   align-items: center;
+   justify-content: flex-end;
+   gap: 12px;
+   flex-wrap: wrap;
+   font-size: 13px;
+}
+
+.cases-unsaved {
+   color: var(--color-neutral-700);
+}
+
+.cases-error {
+   flex: 1;
+   color: var(--color-accent-700);
+}
+
+.cases-empty,
+.cases-loading {
+   padding: 24px 0;
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}
+
+/* On a phone each case is a stack: number and visibility, then the text. */
+@media (max-width: 760px) {
+   .cases-head {
+      display: none;
+   }
+
+   .cases-row {
+      grid-template-columns: 32px 1fr 72px 36px;
+   }
+
+   .cases-row > .cases-text,
+   .cases-note,
+   .cases-row-foot {
+      grid-column: 1 / -1;
+   }
+}

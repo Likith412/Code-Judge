@@ -34,8 +34,8 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SignedOutPage from "./pages/SignedOutPage";
 import SetterProblemsPage from "./pages/SetterProblemsPage";
-import ProblemEditorPage from "./pages/ProblemEditorPage";
-import TestCasesPage from "./pages/TestCasesPage";
+import NewProblemPage from "./pages/NewProblemPage";
+import SetterProblemPage from "./pages/SetterProblemPage";
 import AdminPage from "./pages/AdminPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
@@ -213,15 +213,13 @@ function App() {
                />
                <Route
                   path="/setter/problems/new"
-                  element={<ProblemEditorPage />}
+                  element={<NewProblemPage />}
                />
+               {/* The editor and its test cases are tabs: ?tab=test-cases.
+                   Two segments, so no slug can clash with /new above. */}
                <Route
-                  path="/setter/problems/:problemId"
-                  element={<ProblemEditorPage />}
-               />
-               <Route
-                  path="/setter/problems/:problemId/test-cases"
-                  element={<TestCasesPage />}
+                  path="/setter/problems/:slug/edit"
+                  element={<SetterProblemPage />}
                />
             </Route>
 

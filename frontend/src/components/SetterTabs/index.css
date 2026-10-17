@@ -1,0 +1,24 @@
+/* Problem editor | Test cases. The same look as the problem page's tabs. */
+.setter-tabs {
+   display: flex;
+   border-bottom: 2px solid var(--color-divider);
+}
+
+.setter-tab {
+   margin-bottom: -2px;
+   padding: 8px 14px;
+   border-bottom: 3px solid transparent;
+   font-size: 14px;
+   color: var(--color-neutral-700);
+   text-decoration: none;
+}
+
+.setter-tab:hover {
+   color: var(--color-text);
+}
+
+.setter-tab-on {
+   border-bottom-color: var(--color-accent);
+   font-weight: 600;
+   color: var(--color-text);
+}

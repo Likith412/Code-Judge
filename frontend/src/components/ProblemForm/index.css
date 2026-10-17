@@ -1,0 +1,185 @@
+/* The bar above the form on both the new and the edit page. */
+.editor-top {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 16px;
+   flex-wrap: wrap;
+   margin-bottom: 16px;
+}
+
+.editor-actions {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+}
+
+.editor-dirty {
+   font-size: 12px;
+   color: var(--color-neutral-700);
+}
+
+/* ---- the form ------------------------------------------------------ */
+
+.editor-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+   gap: 32px;
+   margin-top: 24px;
+}
+
+.editor-col {
+   display: flex;
+   flex-direction: column;
+   gap: 16px;
+   min-width: 0;
+}
+
+.editor-pair {
+   display: grid;
+   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+   gap: 12px;
+}
+
+.editor-limits {
+   display: grid;
+   grid-template-columns: 1fr 1fr 1fr;
+   gap: 12px;
+}
+
+.editor-mono {
+   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+   font-size: 13px;
+}
+
+textarea.editor-description {
+   min-height: 160px;
+}
+
+.editor-sublabel {
+   margin-bottom: 5px;
+   font-size: 12px;
+   color: var(--color-neutral-700);
+}
+
+.editor-preview {
+   max-height: 320px;
+   overflow: auto;
+   padding: 12px 14px;
+   background: var(--color-surface);
+   font-size: 14px;
+   line-height: 1.55;
+}
+
+.editor-preview > :first-child {
+   margin-top: 0;
+}
+
+.editor-preview-empty {
+   margin: 0;
+   color: var(--color-neutral-700);
+}
+
+.editor-list {
+   display: flex;
+   flex-direction: column;
+   gap: 6px;
+}
+
+.editor-list-wide {
+   gap: 12px;
+}
+
+.editor-line {
+   display: flex;
+   gap: 6px;
+}
+
+.editor-example {
+   display: grid;
+   grid-template-columns: 1fr 1fr;
+   gap: 8px;
+   padding-top: 8px;
+   border-top: 1px solid var(--color-divider);
+}
+
+.editor-example-head {
+   grid-column: 1 / -1;
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   font-size: 12px;
+   color: var(--color-neutral-700);
+}
+
+.editor-small {
+   padding: 0 4px;
+   font-size: 12px;
+}
+
+textarea.editor-example-box {
+   min-height: 64px;
+}
+
+.editor-example-note {
+   grid-column: 1 / -1;
+}
+
+.editor-langs {
+   display: flex;
+   gap: 8px;
+   flex-wrap: wrap;
+}
+
+.editor-chip {
+   padding: 3px 9px;
+   border: 1px solid var(--color-neutral-400);
+   background: transparent;
+   font: inherit;
+   font-size: 12px;
+   color: var(--color-text);
+   cursor: pointer;
+}
+
+.editor-chip-on {
+   border-color: var(--color-text);
+   background: var(--color-text);
+   color: var(--color-bg);
+}
+
+/* A grey bar over the code, like the one above the problem page editor. */
+.editor-starter-bar {
+   padding: 8px;
+   border: 1px solid var(--color-divider);
+   background: var(--color-surface);
+}
+
+/* Sized like the problem page's picker. */
+.editor-starter-lang {
+   width: 120px;
+   min-height: 30px;
+   padding: 3px 8px;
+   font-size: 13px;
+}
+
+/* Monaco needs a fixed height to draw into. */
+.editor-starter {
+   height: 260px;
+   border: 1px solid var(--color-divider);
+   border-top: 0;
+   background: #fff;
+}
+
+.editor-starter-loading {
+   font-size: 13px;
+   color: var(--color-neutral-700);
+}
+
+/* The pairs stack on a phone. */
+@media (max-width: 640px) {
+   .editor-pair,
+   .editor-limits,
+   .editor-example {
+      grid-template-columns: minmax(0, 1fr);
+   }
+}

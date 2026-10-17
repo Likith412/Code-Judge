@@ -1,0 +1,19 @@
+.editor-danger {
+   display: flex;
+   align-items: center;
+   gap: 12px;
+   margin-top: 40px;
+   padding-top: 16px;
+   border-top: 1px solid var(--color-divider);
+   font-size: 13px;
+   color: var(--color-neutral-700);
+}
+
+.editor-delete {
+   color: var(--color-accent-700);
+}
+
+.editor-loading {
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}

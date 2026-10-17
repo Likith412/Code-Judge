@@ -34,6 +34,12 @@ router.get(
 );
 
 // --- writing a problem -------------------------------------------------
+router.get(
+   "/:slug/edit",
+   requireSetter,
+   validate({ params: schemas.problemSlugSchema }),
+   controller.getProblemForEdit,
+);
 router.post(
    "/",
    requireSetter,

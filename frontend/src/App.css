@@ -1,4 +1,4 @@
-/* ---- page wrappers: one per screen width in the design -------------- */
+/* ---- page wrappers: one per screen width ----------------------------- */
 
 /* Problems, problem, submissions, submission, editor, test cases, admin. */
 .cj-main {
@@ -71,7 +71,7 @@ h6 {
    font-size: 13px;
 }
 
-/* The measure the design uses for every explanatory paragraph. */
+/* The width every explanatory paragraph keeps to. */
 .cj-prose {
    max-width: 44ch;
 }
@@ -96,7 +96,7 @@ h6 {
    margin-bottom: var(--space-2);
 }
 
-/* The design's secondary text. Not .text-muted, which is lighter. */
+/* Secondary text. Not .text-muted, which is lighter. */
 .cj-muted {
    color: var(--color-neutral-700);
 }
@@ -126,7 +126,7 @@ h6 {
 /* ---- phone ---------------------------------------------------------- */
 
 @media (max-width: 640px) {
-   /* A narrower gutter than the design's 24px. */
+   /* A narrower gutter than the usual 24px. */
    .cj-main,
    .cj-main-narrow,
    .cj-main-profile,
@@ -135,16 +135,40 @@ h6 {
       padding-right: var(--space-4);
    }
 
-   /* 32px is a lot of heading on a 360px screen. 26px is the size the design
-      already uses for the problem title. */
-   .cj-page-title {
-      font-size: 26px;
+   /* ---- one type scale for phones. Set here only, never per page. ---- */
+
+   /* Every page title, whatever the page calls it. */
+   .cj-page-title,
+   .cj-form-title,
+   .cj-screen-title,
+   .problems-title,
+   .problem-title,
+   .subs-title-main,
+   .sub-title,
+   .setter-heading,
+   .profile-name {
+      font-size: 24px;
    }
 
-   /* iOS Safari zooms the whole page when you focus an input smaller than
-      16px, and does not zoom back out. This is the fix for that, not a
-      readability tweak — do not lower it. */
-   .input {
-      font-size: 16px;
+   /* "No problems match" and the like. */
+   .problems-empty-title,
+   .subs-empty-title,
+   .setter-empty-title {
+      font-size: 18px;
+   }
+
+   /* Big numbers. */
+   .profile-stat-number {
+      font-size: 28px;
+   }
+
+   .result-accepted-word {
+      font-size: 32px;
+   }
+
+   .profile-avatar {
+      width: 56px;
+      height: 56px;
+      font-size: 22px;
    }
 }

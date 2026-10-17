@@ -92,6 +92,20 @@ async function getProblem(req, res) {
 
 /* ---- writing a problem, setter and admin only ------------------------- */
 
+// The editor's url has the slug. Writes still go by id, which never changes.
+async function getProblemForEdit(req, res) {
+   const found = await Problem.findOne({ slug: req.valid.params.slug }).select(
+      "_id",
+   );
+
+   if (!found) throw ApiError.notFound("No such problem");
+
+   const problem = await loadOwnProblem(found._id, req.user);
+   const samples = await loadSamples(problem._id);
+
+   res.json({ problem: problemDetail(problem, samples) });
+}
+
 async function createProblem(req, res) {
    const body = req.valid.body;
    const slug = pickSlug(body);
@@ -241,6 +255,7 @@ module.exports = {
    listProblems,
    listTags,
    getProblem,
+   getProblemForEdit,
    createProblem,
    updateProblem,
    deleteProblem,

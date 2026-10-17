@@ -29,7 +29,7 @@ const apiStatusConstants = {
    inProgress: "IN_PROGRESS",
 };
 
-// The design opens at 46% question, 260px of result.
+// Opens at 46% question, 260px of result.
 const SPLIT = { start: 46, min: 25, max: 75 };
 const RESULT = { start: 260, min: 120, max: 520 };
 const NARROW = 900;
