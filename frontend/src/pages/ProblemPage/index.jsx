@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Markdown from "react-markdown";
 
@@ -73,6 +73,13 @@ const ProblemPage = () => {
    const [attempt, setAttempt] = useState(null);
    const [sending, setSending] = useState(false);
 
+   // The problem on screen, for replies that arrive late.
+   const shownProblem = useRef(null);
+
+   useEffect(() => {
+      shownProblem.current = problem?.id ?? null;
+   }, [problem]);
+
    const pendingId =
       attempt?.submission && isPending(attempt.submission.status)
          ? attempt.submission.id
@@ -84,7 +91,8 @@ const ProblemPage = () => {
 
       let cancelled = false;
 
-      const fetchSubmission = async () => {
+      // Retries after 1, 2 and 4 seconds. No push comes after a verdict.
+      const fetchSubmission = async (tries = 0) => {
          try {
             const data = await getSubmission(pendingId);
 
@@ -96,8 +104,15 @@ const ProblemPage = () => {
                   : current,
             );
          } catch {
-            // The next push or reconnect asks again.
+            if (cancelled || tries >= 3) return;
+
+            setTimeout(() => fetchSubmission(tries + 1), 1000 * 2 ** tries);
          }
+      };
+
+      // Coming back to the tab catches anything missed.
+      const onVisible = () => {
+         if (document.visibilityState === "visible") fetchSubmission();
       };
 
       // QUEUED or RUNNING carries nothing new, so no call is needed for it.
@@ -112,11 +127,16 @@ const ProblemPage = () => {
       };
 
       // A push sent while the socket was connecting is lost, so check on connect.
-      const stopWatching = watchSubmission(pendingId, onPush, fetchSubmission);
+      const stopWatching = watchSubmission(pendingId, onPush, () =>
+         fetchSubmission(),
+      );
+
+      document.addEventListener("visibilitychange", onVisible);
 
       return () => {
          cancelled = true;
          stopWatching();
+         document.removeEventListener("visibilitychange", onVisible);
       };
    }, [pendingId]);
 
@@ -198,6 +218,8 @@ const ProblemPage = () => {
    };
 
    const send = async (isSampleRun) => {
+      const sentFor = problem.id;
+
       setSending(true);
 
       // On a phone the verdict lives on its own tab.
@@ -211,8 +233,13 @@ const ProblemPage = () => {
             isSampleRun,
          });
 
+         // Another problem is open now, so this is not its result.
+         if (shownProblem.current !== sentFor) return;
+
          setAttempt({ submission: data.submission });
       } catch (error) {
+         if (shownProblem.current !== sentFor) return;
+
          setAttempt({ error: apiError(error).message });
       } finally {
          setSending(false);

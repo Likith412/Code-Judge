@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import {
@@ -39,7 +39,15 @@ const EditProblemPage = () => {
    const [errors, setErrors] = useState({});
    const [confirmDelete, setConfirmDelete] = useState(false);
 
+   // Set by a rename, so the new url does not reload.
+   const renamedTo = useRef(null);
+
    useEffect(() => {
+      if (renamedTo.current === slug) {
+         renamedTo.current = null;
+         return undefined;
+      }
+
       let cancelled = false;
 
       const load = async () => {
@@ -89,6 +97,7 @@ const EditProblemPage = () => {
 
          // A new slug means a new url, or a reload would find nothing.
          if (data.problem.slug !== slug) {
+            renamedTo.current = data.problem.slug;
             navigate(`/setter/problems/${data.problem.slug}/edit`, {
                replace: true,
             });

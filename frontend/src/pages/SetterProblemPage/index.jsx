@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 import EditProblemPage from "../EditProblemPage";
 import TestCasesPage from "../TestCasesPage";
@@ -8,21 +8,16 @@ import TestCasesPage from "../TestCasesPage";
 const tabFrom = (value) => (value === "test-cases" ? "test-cases" : "editor");
 
 const SetterProblemPage = () => {
-   const { slug } = useParams();
    const [searchParams] = useSearchParams();
    const tab = tabFrom(searchParams.get("tab"));
 
-   // A tab stays mounted once opened, so unsaved edits survive a switch.
-   const [opened, setOpened] = useState({ slug, tabs: [tab] });
+   // A tab stays mounted once opened, so unsaved edits survive.
+   const [opened, setOpened] = useState([tab]);
 
-   // A different problem starts fresh. Adjusted in render, not an effect.
-   if (opened.slug !== slug) {
-      setOpened({ slug, tabs: [tab] });
-   } else if (!opened.tabs.includes(tab)) {
-      setOpened({ slug, tabs: [...opened.tabs, tab] });
-   }
+   // Adjusted in render, not an effect.
+   if (!opened.includes(tab)) setOpened([...opened, tab]);
 
-   const shows = (name) => opened.tabs.includes(name) || name === tab;
+   const shows = (name) => opened.includes(name) || name === tab;
 
    return (
       <>

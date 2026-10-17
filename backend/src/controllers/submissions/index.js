@@ -7,6 +7,7 @@ const { ApiError } = require("../../utils/ApiError");
 const {
    loadSolvableProblem,
    checkWaiting,
+   confirmWaiting,
    countCases,
    loadVisibleSubmission,
    submissionView,
@@ -32,6 +33,8 @@ async function createSubmission(req, res) {
       isSampleRun: body.isSampleRun,
       totalTestCases: await countCases(problem._id, body.isSampleRun),
    });
+
+   await confirmWaiting(submission);
 
    // Could not queue it, so drop the row instead of leaving it waiting.
    try {

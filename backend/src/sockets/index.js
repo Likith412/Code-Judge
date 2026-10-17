@@ -57,10 +57,15 @@ async function attachSockets(server) {
    await listenForStatus();
 }
 
+// Their sessions ended, so their sockets close too.
+function disconnectUser(userId) {
+   io?.in(userRoom(String(userId))).disconnectSockets(true);
+}
+
 // Drops every socket, then closes the http server too.
 async function closeSockets() {
    if (subscriber) await subscriber.quit();
    if (io) await io.close();
 }
 
-module.exports = { attachSockets, closeSockets };
+module.exports = { attachSockets, closeSockets, disconnectUser };

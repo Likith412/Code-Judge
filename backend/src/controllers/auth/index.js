@@ -10,6 +10,7 @@ const { User, Session } = require("../../models");
 const { ApiError } = require("../../utils/ApiError");
 const { signAccessToken } = require("../../utils/accessToken");
 const { hashToken } = require("../../utils/tokens");
+const { disconnectUser } = require("../../sockets");
 const { runTransaction } = require("../../utils/transaction");
 const {
    clearRefreshCookie,
@@ -302,6 +303,8 @@ async function logoutAll(req, res) {
       };
    });
 
+   disconnectUser(req.user._id);
+
    // This device keeps its session and cookie, and gets a matching token.
    res.json({
       accessToken: signAccessToken({ user: fresh, sessionId: req.auth.sid }),
@@ -426,6 +429,8 @@ async function resetPassword(req, res) {
       return found;
    });
 
+   disconnectUser(user._id);
+
    await recordAudit({
       actorId: user._id,
       action: "PASSWORD_RESET",
@@ -451,6 +456,7 @@ async function changePassword(req, res) {
       );
 
    await applyNewPassword(withHash, password, "PASSWORD_CHANGE");
+   disconnectUser(req.user._id);
 
    await recordAudit({
       actorId: req.user._id,

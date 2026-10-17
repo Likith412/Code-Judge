@@ -29,17 +29,24 @@ async function loadSolvableProblem(problemId, language) {
    return problem;
 }
 
+const countWaiting = (userId) =>
+   Submission.countDocuments({ userId, status: { $in: PENDING_STATUSES } });
+
+const tooMany = () =>
+   ApiError.rateLimited(
+      `You already have ${MAX_WAITING} waiting to be judged. Wait for one to finish.`,
+   );
+
 // One user cannot fill the queue.
 async function checkWaiting(userId) {
-   const waiting = await Submission.countDocuments({
-      userId,
-      status: { $in: PENDING_STATUSES },
-   });
+   if ((await countWaiting(userId)) >= MAX_WAITING) throw tooMany();
+}
 
-   if (waiting >= MAX_WAITING) {
-      throw ApiError.rateLimited(
-         `You already have ${MAX_WAITING} waiting to be judged. Wait for one to finish.`,
-      );
+// Counts again after saving, to catch requests sent at the same moment.
+async function confirmWaiting(submission) {
+   if ((await countWaiting(submission.userId)) > MAX_WAITING) {
+      await Submission.deleteOne({ _id: submission._id });
+      throw tooMany();
    }
 }
 
@@ -156,6 +163,7 @@ const historyRow = (row, problems) => {
 module.exports = {
    loadSolvableProblem,
    checkWaiting,
+   confirmWaiting,
    countCases,
    loadVisibleSubmission,
    submissionView,

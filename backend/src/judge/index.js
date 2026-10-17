@@ -44,6 +44,21 @@ async function judgeJob(job) {
 
    await publishStatus(submission, "RUNNING");
 
+   const triesLeft = attempt < (job.opts.attempts ?? 1);
+
+   // Back in line for a retry, only if no other run has finished it.
+   const retry = async (err) => {
+      const reset = await Submission.updateOne(
+         { _id: id, status: "RUNNING" },
+         { $set: { status: "QUEUED" } },
+      );
+
+      if (!reset.modifiedCount) return "SKIPPED";
+
+      await publishStatus(submission, "QUEUED");
+      throw err;
+   };
+
    let fields;
 
    try {
@@ -52,17 +67,28 @@ async function judgeJob(job) {
       // Not the user's fault, so no message of ours reaches them.
       logger.error({ err, submissionId: id, attempt }, "judging failed");
 
-      // Back in line. Throwing makes BullMQ retry after a pause.
-      if (attempt < (job.opts.attempts ?? 1)) {
-         await Submission.updateOne({ _id: id }, { $set: { status: "QUEUED" } });
-         await publishStatus(submission, "QUEUED");
-         throw err;
-      }
+      if (triesLeft) return retry(err);
 
       fields = { status: "SYSTEM_ERROR" };
    }
 
-   await saveVerdict(submission, fields);
+   try {
+      await saveVerdict(submission, fields);
+   } catch (err) {
+      logger.error({ err, submissionId: id, attempt }, "could not save verdict");
+
+      if (triesLeft) return retry(err);
+
+      // Last try: end the row, so it stops counting as waiting.
+      fields = { status: "SYSTEM_ERROR" };
+      await Submission.updateOne(
+         { _id: id, status: "RUNNING" },
+         { $set: { status: "SYSTEM_ERROR", judgedAt: new Date() } },
+      ).catch((endErr) =>
+         logger.error({ err: endErr, submissionId: id }, "row left RUNNING"),
+      );
+   }
+
    await publishStatus(submission, fields.status);
 
    return fields.status;

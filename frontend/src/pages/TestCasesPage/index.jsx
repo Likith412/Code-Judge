@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import {
@@ -50,9 +50,12 @@ const newRow = () => ({
    saved: null,
 });
 
+// A hidden case has no explanation to change.
 const changedFields = (row) =>
    FIELDS.filter(
-      (key) => !row.saved || String(row[key]) !== String(row.saved[key]),
+      (key) =>
+         !(key === "explanation" && row.isHidden) &&
+         (!row.saved || String(row[key]) !== String(row.saved[key])),
    );
 
 const TestCasesPage = () => {
@@ -65,20 +68,32 @@ const TestCasesPage = () => {
    const [reloadCount, setReloadCount] = useState(0);
    const [confirmRow, setConfirmRow] = useState(null);
 
+   // Whose rows are shown, so a rename keeps them.
+   const loadedId = useRef(null);
+
    useEffect(() => {
       let cancelled = false;
 
       const load = async () => {
-         setApiStatus(apiStatusConstants.inProgress);
+         if (!loadedId.current) setApiStatus(apiStatusConstants.inProgress);
 
          try {
             // The slug finds the problem. Its id is what the case routes take.
             const problemData = await getProblemForEdit(slug);
-            const caseData = await listTestCases(problemData.problem.id);
+            const found = problemData.problem;
+
+            // Same problem, new slug: keep the rows.
+            if (found.id === loadedId.current) {
+               if (!cancelled) setProblem(found);
+               return;
+            }
+
+            const caseData = await listTestCases(found.id);
 
             if (cancelled) return;
 
-            setProblem(problemData.problem);
+            loadedId.current = found.id;
+            setProblem(found);
             setRows(caseData.testCases.map(fromServer));
             setApiStatus(apiStatusConstants.success);
          } catch (error) {
@@ -115,6 +130,9 @@ const TestCasesPage = () => {
    };
 
    const saveRow = async (row) => {
+      // What was sent, so text typed meanwhile is kept.
+      const sent = Object.fromEntries(FIELDS.map((key) => [key, row[key]]));
+
       patchRow(row.key, { busy: true, error: "" });
 
       try {
@@ -126,7 +144,22 @@ const TestCasesPage = () => {
               )
             : await addTestCase(problem.id, bodyFor(row, FIELDS));
 
-         patchRow(row.key, { ...fromServer(data.testCase), busy: false });
+         const server = fromServer(data.testCase);
+
+         setRows((current) =>
+            current.map((one) => {
+               if (one.key !== row.key) return one;
+
+               const next = { ...one, id: server.id, saved: server.saved };
+
+               // The server's value, unless it was edited since.
+               for (const key of FIELDS) {
+                  next[key] = one[key] === sent[key] ? server[key] : one[key];
+               }
+
+               return { ...next, busy: false };
+            }),
+         );
       } catch (error) {
          patchRow(row.key, { busy: false, error: apiError(error).message });
       }

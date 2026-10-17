@@ -36,12 +36,12 @@ function failedText(submission, problem) {
          ];
       case "TIME_LIMIT_EXCEEDED":
          return [
-            `Test ${at} of ${total} ran past the ${problem.timeLimitMs} ms limit.`,
+            `Test ${at} of ${total} ran past the ${problem.timeLimitMs ? `${problem.timeLimitMs} ms` : "time"} limit.`,
             "The limit is per test case, on the slowest one.",
          ];
       case "MEMORY_LIMIT_EXCEEDED":
          return [
-            `Test ${at} of ${total} used more than the ${problem.memoryLimitMb} MB limit.`,
+            `Test ${at} of ${total} used more than the ${problem.memoryLimitMb ? `${problem.memoryLimitMb} MB` : "memory"} limit.`,
          ];
       case "RUNTIME_ERROR":
          return [`Crashed on test ${at} of ${total}.`];
