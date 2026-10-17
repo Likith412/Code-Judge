@@ -13,6 +13,8 @@ import DifficultyTag from "../../components/DifficultyTag";
 import CopyButton from "../../components/CopyButton";
 import FailureView from "../../components/FailureView";
 import CodeEditor from "../../components/CodeEditor";
+import { CheckIcon } from "../../components/Icons";
+import ProblemSubmissions from "../../components/ProblemSubmissions";
 import ResultPanel from "../../components/ResultPanel";
 import UserContext from "../../context/UserContext";
 import { LANG_LABEL } from "../../utils/languages";
@@ -31,6 +33,11 @@ const apiStatusConstants = {
 const SPLIT = { start: 46, min: 25, max: 75 };
 const RESULT = { start: 260, min: 120, max: 520 };
 const NARROW = 900;
+
+const questionTabs = [
+   { value: "question", label: "Question" },
+   { value: "subs", label: "Submissions" },
+];
 
 const mobileTabs = [
    { value: "problem", label: "Problem" },
@@ -58,6 +65,7 @@ const ProblemPage = () => {
    const [split, setSplit] = useState(SPLIT.start);
    const [resultH, setResultH] = useState(RESULT.start);
    const [mtab, setMtab] = useState("problem");
+   const [qtab, setQtab] = useState("question");
    const [resetConfirm, setResetConfirm] = useState(false);
    const [view, setView] = useState({ height: 0, width: 0, narrow: false });
 
@@ -164,7 +172,18 @@ const ProblemPage = () => {
       setLanguage(problem.supportedLanguages[0] || "");
       setDrafts({});
       setAttempt(null);
+      setQtab("question");
    }
+
+   const finished =
+      attempt?.submission &&
+      !attempt.submission.isSampleRun &&
+      !isPending(attempt.submission.status)
+         ? attempt.submission
+         : null;
+
+   // Solved before, or just now on this page without a reload.
+   const solved = problem?.solved || finished?.status === "ACCEPTED";
 
    const starter = problem?.starterCode?.[language] || "";
    const code = drafts[language] ?? starter;
@@ -226,6 +245,13 @@ const ProblemPage = () => {
                   ? "No submissions yet"
                   : `${problem.acceptanceRate}% accepted`}
             </span>
+
+            {solved && (
+               <span className="problem-solved">
+                  <CheckIcon size={14} />
+                  Solved
+               </span>
+            )}
          </div>
 
          <div className="problem-tags">
@@ -235,8 +261,52 @@ const ProblemPage = () => {
                </span>
             ))}
          </div>
+
+         <div className="problem-qtabs">
+            {questionTabs.map((tab) => (
+               <button
+                  key={tab.value}
+                  type="button"
+                  className={
+                     tab.value === qtab
+                        ? "problem-qtab problem-qtab-on"
+                        : "problem-qtab"
+                  }
+                  onClick={() => setQtab(tab.value)}
+               >
+                  {tab.label}
+               </button>
+            ))}
+         </div>
       </div>
    );
+
+   const renderMySubmissions = () => {
+      if (!user) {
+         return (
+            <p className="problem-subs-note">
+               <Link to="/login">Sign in</Link> to see your submissions to this
+               problem.
+            </p>
+         );
+      }
+
+      if (!solves) {
+         return (
+            <p className="problem-subs-note">
+               Setters and admins do not submit, so there is nothing here.
+            </p>
+         );
+      }
+
+      // A new verdict changes the key, so the list loads again.
+      return (
+         <ProblemSubmissions
+            problemId={problem.id}
+            refreshKey={finished ? finished.id : ""}
+         />
+      );
+   };
 
    const renderExamples = () => (
       <>
@@ -281,23 +351,29 @@ const ProblemPage = () => {
          {renderHead()}
 
          <div className="problem-body">
-            <div className="problem-prose">
-               <Markdown>{problem.description}</Markdown>
-            </div>
-
-            {problem.constraints.length > 0 && (
+            {qtab === "subs" ? (
+               renderMySubmissions()
+            ) : (
                <>
-                  <h6 className="problem-h6">Constraints</h6>
+                  <div className="problem-prose">
+                     <Markdown>{problem.description}</Markdown>
+                  </div>
 
-                  <ul className="problem-constraints">
-                     {problem.constraints.map((line) => (
-                        <li key={line}>{line}</li>
-                     ))}
-                  </ul>
+                  {problem.constraints.length > 0 && (
+                     <>
+                        <h6 className="problem-h6">Constraints</h6>
+
+                        <ul className="problem-constraints">
+                           {problem.constraints.map((line) => (
+                              <li key={line}>{line}</li>
+                           ))}
+                        </ul>
+                     </>
+                  )}
+
+                  {problem.examples.length > 0 && renderExamples()}
                </>
             )}
-
-            {problem.examples.length > 0 && renderExamples()}
          </div>
       </section>
    );

@@ -47,59 +47,6 @@
    color: var(--color-text);
 }
 
-/* ---- verdict tags -------------------------------------------------- */
-
-.verdict {
-   display: inline-flex;
-   align-items: center;
-   gap: 6px;
-   padding: 3px 8px;
-   font-size: 11px;
-   font-weight: 600;
-   letter-spacing: 0.06em;
-   line-height: 1.4;
-   text-transform: uppercase;
-   white-space: nowrap;
-}
-
-.verdict-pending {
-   border: 1px solid var(--color-neutral-500);
-   background: var(--color-surface);
-   color: var(--color-text);
-}
-
-.verdict-accepted {
-   background: var(--color-text);
-   color: var(--color-bg);
-}
-
-.verdict-failed {
-   background: var(--color-accent);
-   color: var(--color-bg);
-}
-
-.verdict-system {
-   border: 1px solid var(--color-accent);
-   color: var(--color-accent-700);
-}
-
-.verdict-pulse {
-   width: 8px;
-   height: 8px;
-   background: currentColor;
-   animation: result-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes result-pulse {
-   0%,
-   100% {
-      opacity: 1;
-   }
-   50% {
-      opacity: 0.2;
-   }
-}
-
 @keyframes result-in {
    from {
       transform: translateY(8px);
@@ -112,7 +59,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-   .verdict-pulse,
    .result-spinner,
    .result-accepted {
       animation: none;
@@ -169,7 +115,6 @@
    color: var(--color-neutral-700);
 }
 
-
 .result-meta {
    font-size: 14px;
    font-variant-numeric: tabular-nums;
@@ -179,7 +124,6 @@
    margin-left: auto;
    font-size: 13px;
 }
-
 
 .result-text {
    margin: 12px 0 0;
@@ -213,32 +157,6 @@
    gap: 14px;
    margin-top: 14px;
    font-size: 14px;
-}
-
-/* Twelve blocks, not a percent: judging stops at the first failure. */
-.result-segs {
-   display: flex;
-   gap: 2px;
-   height: 6px;
-   margin-top: 12px;
-}
-
-.result-segs-tight {
-   margin-top: 10px;
-}
-
-
-.result-seg {
-   flex: 1;
-   background: var(--color-neutral-300);
-}
-
-.result-seg-pass {
-   background: var(--color-text);
-}
-
-.result-seg-fail {
-   background: var(--color-accent);
 }
 
 .result-accepted {
@@ -328,57 +246,7 @@
    background: var(--color-accent);
 }
 
-.result-io-grid {
-   display: grid;
-   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-   gap: 10px;
-   align-items: start;
-   margin-top: 12px;
-}
-
 .result-io-grid-run {
    margin-top: 8px;
 }
 
-.result-io-label {
-   margin-bottom: 4px;
-   font-size: 11px;
-   letter-spacing: 0.08em;
-   text-transform: uppercase;
-   color: var(--color-neutral-700);
-}
-
-.result-io-mine {
-   color: var(--color-accent-700);
-}
-
-.result-io-box {
-   min-width: 0;
-}
-
-/* Long output scrolls inside the box instead of stretching the panel. */
-.result-io {
-   max-height: 160px;
-   overflow: auto;
-   margin: 0;
-   padding: 8px 10px;
-   background: var(--color-surface);
-   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-   font-size: 12.5px;
-   white-space: pre;
-}
-
-.result-io-actual {
-   background: var(--color-accent-100);
-   color: var(--color-accent-800);
-}
-
-/* Your output on a passed sample is green, not red. */
-.result-io-pass .result-io-mine {
-   color: var(--color-success-700);
-}
-
-.result-io-pass .result-io-actual {
-   background: var(--color-success-100);
-   color: var(--color-success-800);
-}

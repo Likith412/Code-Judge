@@ -1,0 +1,139 @@
+/* Sizes here come from design/Code Judge.dc.html, the SUBMISSION DETAIL block. */
+
+.sub-back {
+   font-size: 13px;
+}
+
+.sub-foreign {
+   display: flex;
+   align-items: center;
+   gap: 12px;
+   margin-top: 14px;
+   padding: 10px 14px;
+   background: var(--color-text);
+   color: var(--color-bg);
+   font-size: 13px;
+}
+
+.sub-foreign-tag {
+   padding: 2px 6px;
+   background: var(--color-accent);
+   font-size: 11px;
+   letter-spacing: 0.1em;
+   text-transform: uppercase;
+}
+
+.sub-header {
+   display: flex;
+   align-items: flex-end;
+   justify-content: space-between;
+   gap: 16px;
+   flex-wrap: wrap;
+   padding: 14px 0 16px;
+   border-bottom: 2px solid var(--color-divider);
+}
+
+.sub-title {
+   margin: 0 0 6px;
+   font-size: 28px;
+}
+
+.sub-title a {
+   color: var(--color-text);
+   text-decoration: none;
+}
+
+/* No change on hover. */
+.sub-title a:hover {
+   color: var(--color-text);
+}
+
+.sub-meta {
+   font-size: 13px;
+   color: var(--color-neutral-700);
+}
+
+.sub-verdict {
+   display: flex;
+   align-items: center;
+   gap: 12px;
+}
+
+.sub-passed {
+   font-size: 14px;
+   font-variant-numeric: tabular-nums;
+}
+
+.sub-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+   gap: 24px;
+   margin-top: 20px;
+}
+
+.sub-label {
+   margin-bottom: 8px;
+   font-size: 11px;
+   letter-spacing: 0.1em;
+   text-transform: uppercase;
+   color: var(--color-neutral-700);
+}
+
+.sub-code {
+   position: relative;
+   height: 460px;
+   border: 1px solid var(--color-divider);
+   background: #fff;
+}
+
+/* Shown while Monaco loads, so the code is readable at once. */
+.sub-code-plain {
+   width: 100%;
+   height: 100%;
+   margin: 0;
+   padding: 12px;
+   overflow: auto;
+   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+   font-size: 13px;
+}
+
+.sub-segs {
+   margin-top: 0;
+}
+
+.sub-text {
+   margin: 12px 0 0;
+   max-width: 50ch;
+   font-size: 14px;
+}
+
+.sub-hint {
+   margin: 4px 0 0;
+   font-size: 13px;
+   color: var(--color-neutral-700);
+}
+
+.sub-error {
+   max-height: 300px;
+   overflow: auto;
+   margin: 12px 0 0;
+   padding: 12px;
+   background: var(--color-text);
+   color: var(--color-bg);
+   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+   font-size: 12.5px;
+   line-height: 1.5;
+   white-space: pre;
+}
+
+.sub-loading {
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}
+
+/* Two columns need 700px; below that the code sits on top. */
+@media (max-width: 760px) {
+   .sub-grid {
+      grid-template-columns: minmax(0, 1fr);
+   }
+}

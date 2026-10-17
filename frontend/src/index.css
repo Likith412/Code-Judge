@@ -360,8 +360,9 @@ textarea.input {
    color: var(--color-accent-2-800);
 }
 
+/* A light grey, the same as the example boxes. Lighter vanishes into the page. */
 .tag-neutral {
-   background: var(--color-neutral-100);
+   background: var(--color-neutral-200);
    color: var(--color-neutral-800);
 }
 

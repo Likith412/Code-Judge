@@ -1,5 +1,5 @@
 // Shared by the submission handlers. Nothing here touches res: it returns a value.
-const { Problem, Submission, TestCase } = require("../../models");
+const { Problem, Submission, TestCase, User } = require("../../models");
 const { ApiError } = require("../../utils/ApiError");
 const {
    JUDGED_LANGUAGES,
@@ -81,10 +81,87 @@ const submissionView = (row) => ({
    judgedAt: row.judgedAt,
 });
 
+// What the detail page shows around the code: the problem and whose it is.
+async function submissionContext(submission) {
+   const [problem, author] = await Promise.all([
+      Problem.findById(submission.problemId).select(
+         "title slug timeLimitMs memoryLimitMb",
+      ),
+      User.findById(submission.userId).select("username"),
+   ]);
+
+   return {
+      problem: problem && {
+         title: problem.title,
+         slug: problem.slug,
+         timeLimitMs: problem.timeLimitMs,
+         memoryLimitMb: problem.memoryLimitMb,
+      },
+      author: author && { username: author.username },
+   };
+}
+
+/* ---- my submissions --------------------------------------------------- */
+
+// Run is not history, so only Submit rows are listed.
+function mineFilter(userId, query) {
+   const filter = { userId, isSampleRun: false };
+
+   if (query.problemId) filter.problemId = query.problemId;
+   if (query.language) filter.language = query.language;
+   if (query.status) filter.status = query.status;
+
+   return filter;
+}
+
+// Titles for a page of rows, in one query.
+async function problemsById(ids) {
+   const problems = await Problem.find({ _id: { $in: ids } }).select(
+      "title slug",
+   );
+
+   return new Map(problems.map((problem) => [String(problem._id), problem]));
+}
+
+// Every problem this user submitted to, for the problem filter.
+async function submittedProblems(userId) {
+   const ids = await Submission.distinct("problemId", {
+      userId,
+      isSampleRun: false,
+   });
+   const problems = await Problem.find({ _id: { $in: ids } })
+      .select("title")
+      .sort({ title: 1 });
+
+   return problems.map((problem) => ({ id: problem._id, title: problem.title }));
+}
+
+// One row in the list. The code is left out, the detail page has it.
+const historyRow = (row, problems) => {
+   const problem = problems.get(String(row.problemId));
+
+   return {
+      id: row._id,
+      problem: problem
+         ? { id: problem._id, title: problem.title, slug: problem.slug }
+         : null,
+      language: row.language,
+      status: row.status,
+      testCasesPassed: row.testCasesPassed,
+      totalTestCases: row.totalTestCases,
+      createdAt: row.createdAt,
+   };
+};
+
 module.exports = {
    loadSolvableProblem,
    checkWaiting,
    countCases,
    loadVisibleSubmission,
    submissionView,
+   submissionContext,
+   mineFilter,
+   problemsById,
+   submittedProblems,
+   historyRow,
 };

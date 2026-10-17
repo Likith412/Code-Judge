@@ -10,6 +10,11 @@ const {
    countCases,
    loadVisibleSubmission,
    submissionView,
+   submissionContext,
+   mineFilter,
+   problemsById,
+   submittedProblems,
+   historyRow,
 } = require("./helpers");
 
 // Saved as QUEUED and answered at once. The worker judges it.
@@ -46,7 +51,39 @@ async function getSubmission(req, res) {
       req.user,
    );
 
-   res.json({ submission: submissionView(submission) });
+   res.json({
+      submission: submissionView(submission),
+      ...(await submissionContext(submission)),
+   });
 }
 
-module.exports = { createSubmission, getSubmission };
+// Newest first. Also every problem you submitted to, for the filter.
+async function listMySubmissions(req, res) {
+   const query = req.valid.query;
+   const filter = mineFilter(req.user._id, query);
+
+   const [rows, total, problems] = await Promise.all([
+      Submission.find(filter)
+         .select(
+            "problemId language status testCasesPassed totalTestCases createdAt",
+         )
+         .sort({ createdAt: -1 })
+         .skip((query.page - 1) * query.limit)
+         .limit(query.limit),
+      Submission.countDocuments(filter),
+      submittedProblems(req.user._id),
+   ]);
+
+   const titles = await problemsById(rows.map((row) => row.problemId));
+
+   res.json({
+      submissions: rows.map((row) => historyRow(row, titles)),
+      problems,
+      page: query.page,
+      limit: query.limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / query.limit)),
+   });
+}
+
+module.exports = { createSubmission, getSubmission, listMySubmissions };

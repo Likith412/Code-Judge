@@ -21,4 +21,35 @@ const statusTone = (status) => {
    return "failed";
 };
 
-export { STATUS_LABEL, isPending, statusTone };
+// What goes under a failed verdict, one line or two. problem gives the limits.
+function failedText(submission, problem) {
+   const { status, failedTestIndex: at, totalTestCases: total } = submission;
+   const sample = submission.sampleResults?.[0];
+
+   switch (status) {
+      case "WRONG_ANSWER":
+         return [
+            `Failed on test ${at} of ${total}` +
+               (sample
+                  ? " - a sample case, shown below."
+                  : " - a hidden case, so its input isn’t shown."),
+         ];
+      case "TIME_LIMIT_EXCEEDED":
+         return [
+            `Test ${at} of ${total} ran past the ${problem.timeLimitMs} ms limit.`,
+            "The limit is per test case, on the slowest one.",
+         ];
+      case "MEMORY_LIMIT_EXCEEDED":
+         return [
+            `Test ${at} of ${total} used more than the ${problem.memoryLimitMb} MB limit.`,
+         ];
+      case "RUNTIME_ERROR":
+         return [`Crashed on test ${at} of ${total}.`];
+      case "COMPILATION_ERROR":
+         return ["Did not compile, so no tests ran."];
+      default:
+         return [];
+   }
+}
+
+export { STATUS_LABEL, isPending, statusTone, failedText };

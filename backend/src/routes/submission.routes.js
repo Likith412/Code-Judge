@@ -17,6 +17,14 @@ router.post(
    controller.createSubmission,
 );
 
+// Your own, newest first. Before /:id, or "me" would be read as an id.
+router.get(
+   "/me",
+   requireAuth,
+   validate({ query: schemas.listMineQuerySchema }),
+   controller.listMySubmissions,
+);
+
 // The author, or an admin. Anyone else is told it does not exist.
 router.get(
    "/:id",

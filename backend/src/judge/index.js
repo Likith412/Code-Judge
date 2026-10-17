@@ -5,6 +5,7 @@ const { addJudgeJob, publishStatus } = require("../queue");
 const { PENDING_STATUSES } = require("../utils/constants");
 const runner = require("./dockerRunner");
 const { runCases } = require("./runCases");
+const { saveVerdict } = require("./saveVerdict");
 
 /* ---- one job, start to end -------------------------------------------- */
 
@@ -61,10 +62,7 @@ async function judgeJob(job) {
       fields = { status: "SYSTEM_ERROR" };
    }
 
-   await Submission.updateOne(
-      { _id: id },
-      { $set: { ...fields, judgedAt: new Date() } },
-   );
+   await saveVerdict(submission, fields);
    await publishStatus(submission, fields.status);
 
    return fields.status;

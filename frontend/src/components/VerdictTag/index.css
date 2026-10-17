@@ -1,0 +1,56 @@
+.verdict {
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+   padding: 3px 8px;
+   font-size: 11px;
+   font-weight: 600;
+   letter-spacing: 0.06em;
+   line-height: 1.4;
+   text-transform: uppercase;
+   white-space: nowrap;
+}
+
+.verdict-pending {
+   border: 1px solid var(--color-neutral-500);
+   background: var(--color-surface);
+   color: var(--color-text);
+}
+
+.verdict-accepted {
+   background: var(--color-text);
+   color: var(--color-bg);
+}
+
+.verdict-failed {
+   background: var(--color-accent);
+   color: var(--color-bg);
+}
+
+.verdict-system {
+   border: 1px solid var(--color-accent);
+   color: var(--color-accent-700);
+}
+
+.verdict-pulse {
+   width: 8px;
+   height: 8px;
+   background: currentColor;
+   animation: result-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes result-pulse {
+   0%,
+   100% {
+      opacity: 1;
+   }
+   50% {
+      opacity: 0.2;
+   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .verdict-pulse {
+      animation: none;
+   }
+}

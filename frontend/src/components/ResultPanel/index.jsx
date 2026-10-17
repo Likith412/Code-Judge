@@ -1,53 +1,12 @@
 import { Link } from "react-router-dom";
 
 import { LANG_LABEL, RUNNABLE } from "../../utils/languages";
-import { STATUS_LABEL, isPending, statusTone } from "../../utils/verdicts";
+import { STATUS_LABEL, failedText, isPending } from "../../utils/verdicts";
+import OutputBox from "../OutputBox";
+import TestSegments from "../TestSegments";
+import VerdictTag from "../VerdictTag";
 
 import "./index.css";
-
-const VerdictTag = ({ status, children }) => (
-   <span className={`verdict verdict-${statusTone(status)}`}>
-      {isPending(status) && <span className="verdict-pulse" />}
-      {children || STATUS_LABEL[status] || status}
-   </span>
-);
-
-// One block per test: ink for passed, red for the failed one, grey for the rest.
-const Segments = ({ submission, gap = "" }) => {
-   const { totalTestCases, testCasesPassed, failedTestIndex, status } =
-      submission;
-   const pending = isPending(status);
-
-   return (
-      <div className={`result-segs ${gap}`}>
-         {Array.from({ length: totalTestCases }, (_, index) => {
-            const position = index + 1;
-            let tone = "";
-
-            if (!pending && position <= testCasesPassed)
-               tone = "result-seg-pass";
-            if (!pending && position === failedTestIndex)
-               tone = "result-seg-fail";
-
-            return <span key={position} className={`result-seg ${tone}`} />;
-         })}
-      </div>
-   );
-};
-
-const OutputBox = ({ label, text, mine, passed }) => (
-   <div className={passed ? "result-io-box result-io-pass" : "result-io-box"}>
-      <div
-         className={mine ? "result-io-label result-io-mine" : "result-io-label"}
-      >
-         {label}
-      </div>
-
-      <pre className={mine ? "result-io result-io-actual" : "result-io"}>
-         {text || " "}
-      </pre>
-   </div>
-);
 
 const ResultPanel = (props) => {
    const {
@@ -172,37 +131,6 @@ const ResultPanel = (props) => {
       );
    };
 
-   // What the design says under a failed verdict, one line or two.
-   const failedText = () => {
-      const { status, failedTestIndex: at, totalTestCases: total } = submission;
-      const sample = submission.sampleResults?.[0];
-
-      switch (status) {
-         case "WRONG_ANSWER":
-            return [
-               `Failed on test ${at} of ${total}` +
-                  (sample
-                     ? " - a sample case, shown below."
-                     : " - a hidden case, so its input isn’t shown."),
-            ];
-         case "TIME_LIMIT_EXCEEDED":
-            return [
-               `Test ${at} of ${total} ran past the ${problem.timeLimitMs} ms limit.`,
-               "The limit is per test case, on the slowest one.",
-            ];
-         case "MEMORY_LIMIT_EXCEEDED":
-            return [
-               `Test ${at} of ${total} used more than the ${problem.memoryLimitMb} MB limit.`,
-            ];
-         case "RUNTIME_ERROR":
-            return [`Crashed on test ${at} of ${total}.`];
-         case "COMPILATION_ERROR":
-            return ["Did not compile, so no tests ran."];
-         default:
-            return [];
-      }
-   };
-
    const renderAccepted = () => (
       <>
          <div className="result-accepted">
@@ -211,7 +139,7 @@ const ResultPanel = (props) => {
             <div className="result-accepted-meta">{meta(submission)}</div>
          </div>
 
-         <Segments submission={submission} gap="result-segs-tight" />
+         <TestSegments submission={submission} gap="result-segs-tight" />
 
          <div className="result-links">
             <Link to={`/submissions/${submission.id}`}>View submission</Link>
@@ -220,7 +148,7 @@ const ResultPanel = (props) => {
    );
 
    const renderFailed = () => {
-      const [line, hint] = failedText();
+      const [line, hint] = failedText(submission, problem);
       const sample = submission.sampleResults?.[0];
 
       return (
@@ -236,7 +164,7 @@ const ResultPanel = (props) => {
                </Link>
             </div>
 
-            <Segments submission={submission} />
+            <TestSegments submission={submission} />
 
             {line && <p className="result-text">{line}</p>}
             {hint && <p className="result-hint">{hint}</p>}

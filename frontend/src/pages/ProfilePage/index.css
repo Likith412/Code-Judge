@@ -1,0 +1,145 @@
+/* Sizes here come from design/Code Judge.dc.html, the PROFILE block. */
+
+.profile-header {
+   display: flex;
+   align-items: flex-start;
+   gap: 20px;
+   padding-bottom: 20px;
+   border-bottom: 2px solid var(--color-divider);
+}
+
+/* The first letter of the name. There is no avatar upload. */
+.profile-avatar {
+   display: grid;
+   place-items: center;
+   flex: none;
+   width: 72px;
+   height: 72px;
+   background: var(--color-text);
+   color: var(--color-bg);
+   font-family: var(--font-heading);
+   font-size: 28px;
+   font-weight: 800;
+}
+
+.profile-who {
+   min-width: 0;
+}
+
+.profile-name {
+   margin: 0;
+   font-size: 28px;
+}
+
+.profile-handle {
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}
+
+.profile-bio {
+   max-width: 60ch;
+   margin: 10px 0 0;
+   font-size: 14px;
+}
+
+.profile-stats {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+   border-bottom: 2px solid var(--color-divider);
+}
+
+.profile-stat {
+   padding: 18px 16px;
+   border-right: 1px solid var(--color-divider);
+}
+
+.profile-stat:first-child {
+   padding-left: 0;
+}
+
+.profile-stat:last-child {
+   border-right: 0;
+}
+
+.profile-stat-label {
+   font-size: 11px;
+   letter-spacing: 0.1em;
+   text-transform: uppercase;
+   color: var(--color-neutral-700);
+}
+
+.profile-stat-number {
+   font-family: var(--font-heading);
+   font-size: 36px;
+   font-weight: 800;
+   line-height: 1.1;
+}
+
+.profile-stat-note {
+   font-size: 13px;
+   font-variant-numeric: tabular-nums;
+   color: var(--color-neutral-700);
+}
+
+.profile-langs {
+   display: flex;
+   flex-direction: column;
+   gap: 2px;
+   margin-top: 8px;
+   font-size: 14px;
+}
+
+.profile-lang {
+   display: flex;
+   justify-content: space-between;
+   gap: 12px;
+}
+
+.profile-section {
+   margin: 28px 0 10px;
+   color: var(--color-neutral-700);
+}
+
+.profile-none {
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}
+
+.profile-solved {
+   display: grid;
+   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+   gap: 0 24px;
+}
+
+.profile-solved-row {
+   display: flex;
+   justify-content: space-between;
+   gap: 10px;
+   padding: 10px 0;
+   border-bottom: 1px solid var(--color-divider);
+   font-size: 14px;
+   color: var(--color-text);
+   text-decoration: none;
+}
+
+.profile-solved-row:hover {
+   color: var(--color-accent);
+}
+
+.profile-loading {
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}
+
+/* Stacked on a phone, so the dividers run across, not down. */
+@media (max-width: 600px) {
+   .profile-stat {
+      padding-left: 0;
+      border-right: 0;
+      border-bottom: 1px solid var(--color-divider);
+   }
+
+   .profile-stat:last-child {
+      border-bottom: 0;
+   }
+}

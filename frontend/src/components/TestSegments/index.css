@@ -1,0 +1,24 @@
+/* Twelve blocks, not a percent: judging stops at the first failure. */
+.result-segs {
+   display: flex;
+   gap: 2px;
+   height: 6px;
+   margin-top: 12px;
+}
+
+.result-segs-tight {
+   margin-top: 10px;
+}
+
+.result-seg {
+   flex: 1;
+   background: var(--color-neutral-300);
+}
+
+.result-seg-pass {
+   background: var(--color-text);
+}
+
+.result-seg-fail {
+   background: var(--color-accent);
+}
