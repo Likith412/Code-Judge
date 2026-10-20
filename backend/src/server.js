@@ -27,6 +27,7 @@ async function startServer() {
       await verifyMailer();
 
       server = http.createServer(app);
+
       await attachSockets(server);
 
       server.listen(PORT, () => {
@@ -50,6 +51,7 @@ async function shutdown(signal) {
    try {
       // Open sockets would keep server.close() waiting, so this closes both.
       if (server) await closeSockets();
+
       await queue.close();
       await disconnectRedis();
       await disconnectDatabase();

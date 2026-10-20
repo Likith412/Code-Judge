@@ -17,10 +17,11 @@ router.post(
    controller.createSubmission,
 );
 
-// Your own, newest first. Before /:id, or "me" would be read as an id.
+// A USER's own history. Before /:id, or "me" would be read as an id.
 router.get(
    "/me",
    requireAuth,
+   requireRole(["USER"]),
    validate({ query: schemas.listMineQuerySchema }),
    controller.listMySubmissions,
 );

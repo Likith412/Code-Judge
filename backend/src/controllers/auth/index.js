@@ -6,6 +6,7 @@ const {
    sendVerificationEmail,
    sendPasswordResetEmail,
 } = require("../../config/mailer");
+
 const { User, Session } = require("../../models");
 const { ApiError } = require("../../utils/ApiError");
 const { signAccessToken } = require("../../utils/accessToken");
@@ -146,6 +147,7 @@ async function login(req, res) {
 
    if (user.status === "BANNED")
       throw new ApiError("ACCOUNT_BANNED", "This account is banned");
+
    if (user.status === "DELETED")
       throw new ApiError("INVALID_CREDENTIALS", "Email or password is wrong");
 
@@ -229,6 +231,7 @@ async function refresh(req, res) {
 
       if (live.expiresAt < new Date()) {
          await revokeSessionRow(live, "EXPIRED");
+
          throw new ApiError(
             "SESSION_EXPIRED",
             "Your session has expired. Please sign in again.",
@@ -239,6 +242,7 @@ async function refresh(req, res) {
 
       if (!user || user.status !== "ACTIVE") {
          await revokeFamily(live.familyId, "ADMIN");
+
          throw new ApiError(
             "SESSION_REVOKED",
             "This account can no longer sign in",
@@ -258,6 +262,7 @@ async function refresh(req, res) {
    } catch (err) {
       // A cookie that no longer works should not be sent again.
       clearRefreshCookie(res);
+
       throw err;
    }
 }

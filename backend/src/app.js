@@ -16,14 +16,19 @@ const app = express();
 app.set("trust proxy", 1);
 
 app.use(helmet());
+
 app.use(requestId);
+
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
+
 app.use(express.json({ limit: "100kb" }));
+
 app.use(cookieParser());
 
 app.use("/api", routes);
 
 app.use(notFound);
+
 app.use(errorHandler(logger));
 
 module.exports = app;

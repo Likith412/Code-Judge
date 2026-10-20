@@ -15,7 +15,9 @@ const fromZod = (err) =>
 const fromBodyParser = (err) => {
    if (err.type === "entity.parse.failed")
       return ApiError.badRequest("Body is not valid JSON");
+
    if (err.type === "entity.too.large") return ApiError.payloadTooLarge();
+
    return null;
 };
 
@@ -24,7 +26,6 @@ const errorHandler = (logger) => (err, req, res, _next) => {
    let error = err;
 
    if (error instanceof ZodError) error = fromZod(error);
-
    if (!(error instanceof ApiError)) error = fromBodyParser(error) || error;
 
    if (!(error instanceof ApiError)) {

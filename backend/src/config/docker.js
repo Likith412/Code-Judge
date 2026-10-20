@@ -11,8 +11,7 @@ const SOCKETS = [
    "/var/run/docker.sock",
 ];
 
-// DOCKER_HOST wins, as it does for the docker command; dockerode reads it itself.
-// Otherwise the first socket that is really there. A broken link does not count.
+// DOCKER_HOST wins (dockerode reads it); else the first socket that really exists.
 function connection() {
    if (DOCKER_HOST) return undefined;
 

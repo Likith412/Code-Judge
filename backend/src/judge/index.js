@@ -14,6 +14,7 @@ async function judgeCases(submission) {
    const problem = await Problem.findById(submission.problemId).select(
       "timeLimitMs memoryLimitMb comparisonMode",
    );
+
    const filter = { problemId: submission.problemId };
 
    if (submission.isSampleRun) filter.isHidden = false;
@@ -56,6 +57,7 @@ async function judgeJob(job) {
       if (!reset.modifiedCount) return "SKIPPED";
 
       await publishStatus(submission, "QUEUED");
+
       throw err;
    };
 
@@ -75,12 +77,16 @@ async function judgeJob(job) {
    try {
       await saveVerdict(submission, fields);
    } catch (err) {
-      logger.error({ err, submissionId: id, attempt }, "could not save verdict");
+      logger.error(
+         { err, submissionId: id, attempt },
+         "could not save verdict",
+      );
 
       if (triesLeft) return retry(err);
 
       // Last try: end the row, so it stops counting as waiting.
       fields = { status: "SYSTEM_ERROR" };
+
       await Submission.updateOne(
          { _id: id, status: "RUNNING" },
          { $set: { status: "SYSTEM_ERROR", judgedAt: new Date() } },
@@ -100,9 +106,11 @@ async function judgeJob(job) {
 async function checkSandbox() {
    // Their jobs run again, so old boxes are of no use.
    const removed = await runner.removeLeftovers();
+
    if (removed) logger.info(`Removed ${removed} leftover sandboxes`);
 
    const missing = await runner.missingImages();
+
    if (missing.length) {
       throw new Error(
          `Judge images missing: ${missing.join(", ")}. Run npm run judge:images`,

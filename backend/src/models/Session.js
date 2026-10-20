@@ -47,6 +47,7 @@ const sessionSchema = new Schema(
 );
 
 sessionSchema.index({ userId: 1, status: 1 });
+
 // Used to detect token reuse; sparse because most tokens have no previous token.
 sessionSchema.index({ previousTokenHash: 1 }, { sparse: true });
 sessionSchema.index({ familyId: 1 });

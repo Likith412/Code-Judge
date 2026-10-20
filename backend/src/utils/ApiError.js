@@ -21,6 +21,10 @@ const STATUS = {
    LINK_INVALID: 400,
    LINK_EXPIRED: 400,
    LINK_USED: 400,
+
+   // Contest codes
+   CONTEST_CLOSED: 403,
+   CONTEST_FINISHED: 403,
 };
 
 class ApiError extends Error {

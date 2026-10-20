@@ -19,6 +19,7 @@ router.get(
    validate({ query: schemas.listProblemsQuerySchema }),
    controller.listProblems,
 );
+
 // Above /:slug, or "tags" reads as a slug. assertSlugFree reserves the word too.
 router.get(
    "/tags",
@@ -26,6 +27,7 @@ router.get(
    validate({ query: schemas.tagsQuerySchema }),
    controller.listTags,
 );
+
 router.get(
    "/:slug",
    optionalAuth,
@@ -40,12 +42,14 @@ router.get(
    validate({ params: schemas.problemSlugSchema }),
    controller.getProblemForEdit,
 );
+
 router.post(
    "/",
    requireSetter,
    validate({ body: schemas.createProblemSchema }),
    controller.createProblem,
 );
+
 router.patch(
    "/:id",
    requireSetter,
@@ -55,6 +59,7 @@ router.patch(
    }),
    controller.updateProblem,
 );
+
 router.delete(
    "/:id",
    requireSetter,
@@ -69,6 +74,7 @@ router.get(
    validate({ params: schemas.problemIdSchema }),
    controller.listTestCases,
 );
+
 router.post(
    "/:id/test-cases",
    requireSetter,
@@ -78,6 +84,7 @@ router.post(
    }),
    controller.addTestCase,
 );
+
 router.patch(
    "/:id/test-cases/:testCaseId",
    requireSetter,
@@ -87,6 +94,7 @@ router.patch(
    }),
    controller.updateTestCase,
 );
+
 router.delete(
    "/:id/test-cases/:testCaseId",
    requireSetter,

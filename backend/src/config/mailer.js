@@ -10,7 +10,7 @@ const transport = isConsole
    ? nodemailer.createTransport({ jsonTransport: true })
    : nodemailer.createTransport(SMTP_URL);
 
-async function sendMail({ to, subject, text, html }) {
+async function sendMail({ to, subject, text, html, link }) {
    const info = await transport.sendMail({
       from: MAIL_FROM,
       to,
@@ -21,7 +21,8 @@ async function sendMail({ to, subject, text, html }) {
 
    if (isConsole) {
       logger.info(
-         `\n----- email -----\nto: ${to}\nsubject: ${subject}\n\n${text}\n-----------------`,
+         { to, subject, link },
+         "Email not sent (console mode). Open the link.",
       );
    } else {
       logger.info({ to, subject, messageId: info.messageId }, "email sent");
@@ -35,6 +36,7 @@ async function verifyMailer() {
       logger.warn(
          "SMTP_URL is console://, emails are printed to the log and never sent",
       );
+
       return;
    }
 
@@ -44,6 +46,7 @@ async function verifyMailer() {
 
 // Both emails are the same shape.
 const layout = (line, action, url) => ({
+   link: url,
    text: `${line}\n\n${action}: ${url}\n\nIf you did not ask for this, ignore this email.`,
    html: `<p>${line}</p><p><a href="${url}">${action}</a></p><p style="color:#64748b;font-size:12px">If you did not ask for this, ignore this email.</p>`,
 });

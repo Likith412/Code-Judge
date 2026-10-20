@@ -12,14 +12,9 @@ const starter = (hint) => ({
       "   }",
       "}",
    ].join("\n"),
-   python: [
-      "def main():",
-      `    # ${hint}`,
-      "    pass",
-      "",
-      "",
-      "main()",
-   ].join("\n"),
+   python: ["def main():", `    # ${hint}`, "    pass", "", "", "main()"].join(
+      "\n",
+   ),
    cpp: [
       "#include <bits/stdc++.h>",
       "using namespace std;",
@@ -51,7 +46,11 @@ const problems = [
          "",
          "The two positions, smaller one first, counting from 0, separated by a space. Exactly one pair always works.",
       ].join("\n"),
-      constraints: ["2 <= n <= 10000", "-10^9 <= each number <= 10^9", "Exactly one pair adds up to the target"],
+      constraints: [
+         "2 <= n <= 10000",
+         "-10^9 <= each number <= 10^9",
+         "Exactly one pair adds up to the target",
+      ],
       examples: [
          {
             input: "4\n2 7 11 15\n9",
@@ -59,13 +58,33 @@ const problems = [
             explanation: "2 + 7 is 9, so the answer is positions 0 and 1.",
          },
       ],
-      starterCode: starter("read n, the numbers and the target, then print the two positions"),
+      starterCode: starter(
+         "read n, the numbers and the target, then print the two positions",
+      ),
       testCases: [
-         { input: "4\n2 7 11 15\n9", expectedOutput: "0 1", isHidden: false, explanation: "2 + 7 = 9" },
-         { input: "3\n3 2 4\n6", expectedOutput: "1 2", isHidden: false, explanation: "2 + 4 = 6" },
+         {
+            input: "4\n2 7 11 15\n9",
+            expectedOutput: "0 1",
+            isHidden: false,
+            explanation: "2 + 7 = 9",
+         },
+         {
+            input: "3\n3 2 4\n6",
+            expectedOutput: "1 2",
+            isHidden: false,
+            explanation: "2 + 4 = 6",
+         },
          { input: "2\n3 3\n6", expectedOutput: "0 1", isHidden: true },
-         { input: "5\n-1 -2 -3 -4 -5\n-8", expectedOutput: "2 4", isHidden: true },
-         { input: "6\n1000000000 2 3 4 5 -1000000000\n0", expectedOutput: "0 5", isHidden: true },
+         {
+            input: "5\n-1 -2 -3 -4 -5\n-8",
+            expectedOutput: "2 4",
+            isHidden: true,
+         },
+         {
+            input: "6\n1000000000 2 3 4 5 -1000000000\n0",
+            expectedOutput: "0 5",
+            isHidden: true,
+         },
       ],
    },
    {
@@ -88,8 +107,18 @@ const problems = [
       examples: [{ input: "hello", output: "olleh" }],
       starterCode: starter("read the word and print it backwards"),
       testCases: [
-         { input: "hello", expectedOutput: "olleh", isHidden: false, explanation: "The letters run the other way." },
-         { input: "a", expectedOutput: "a", isHidden: false, explanation: "One character reads the same both ways." },
+         {
+            input: "hello",
+            expectedOutput: "olleh",
+            isHidden: false,
+            explanation: "The letters run the other way.",
+         },
+         {
+            input: "a",
+            expectedOutput: "a",
+            isHidden: false,
+            explanation: "One character reads the same both ways.",
+         },
          { input: "racecar", expectedOutput: "racecar", isHidden: true },
          { input: "abcdef123", expectedOutput: "321fedcba", isHidden: true },
       ],
@@ -112,8 +141,19 @@ const problems = [
       examples: [{ input: "5", output: "1\n2\nFizz\n4\nBuzz" }],
       starterCode: starter("loop from 1 to n and print one line each time"),
       testCases: [
-         { input: "5", expectedOutput: "1\n2\nFizz\n4\nBuzz", isHidden: false, explanation: "3 divides by 3, 5 divides by 5." },
-         { input: "15", expectedOutput: "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz", isHidden: false, explanation: "15 divides by both." },
+         {
+            input: "5",
+            expectedOutput: "1\n2\nFizz\n4\nBuzz",
+            isHidden: false,
+            explanation: "3 divides by 3, 5 divides by 5.",
+         },
+         {
+            input: "15",
+            expectedOutput:
+               "1\n2\nFizz\n4\nBuzz\nFizz\n7\n8\nFizz\nBuzz\n11\nFizz\n13\n14\nFizzBuzz",
+            isHidden: false,
+            explanation: "15 divides by both.",
+         },
          { input: "1", expectedOutput: "1", isHidden: true },
          { input: "3", expectedOutput: "1\n2\nFizz", isHidden: true },
       ],
@@ -134,12 +174,26 @@ const problems = [
          "",
          "The position of the target counting from 0, or `-1` when it is not there.",
       ].join("\n"),
-      constraints: ["1 <= n <= 100000", "The list is sorted and holds no repeats", "-10^9 <= each number <= 10^9"],
+      constraints: [
+         "1 <= n <= 100000",
+         "The list is sorted and holds no repeats",
+         "-10^9 <= each number <= 10^9",
+      ],
       examples: [{ input: "6\n-1 0 3 5 9 12\n9", output: "4" }],
       starterCode: starter("halve the range until the target is found"),
       testCases: [
-         { input: "6\n-1 0 3 5 9 12\n9", expectedOutput: "4", isHidden: false, explanation: "9 sits at position 4." },
-         { input: "6\n-1 0 3 5 9 12\n2", expectedOutput: "-1", isHidden: false, explanation: "2 is not in the list." },
+         {
+            input: "6\n-1 0 3 5 9 12\n9",
+            expectedOutput: "4",
+            isHidden: false,
+            explanation: "9 sits at position 4.",
+         },
+         {
+            input: "6\n-1 0 3 5 9 12\n2",
+            expectedOutput: "-1",
+            isHidden: false,
+            explanation: "2 is not in the list.",
+         },
          { input: "1\n5\n5", expectedOutput: "0", isHidden: true },
          { input: "1\n5\n-5", expectedOutput: "-1", isHidden: true },
          { input: "5\n1 2 3 4 5\n1", expectedOutput: "0", isHidden: true },
@@ -167,8 +221,18 @@ const problems = [
       ],
       starterCode: starter("each step is the sum of the two before it"),
       testCases: [
-         { input: "3", expectedOutput: "3", isHidden: false, explanation: "1+1+1, 1+2, 2+1" },
-         { input: "1", expectedOutput: "1", isHidden: false, explanation: "One step, one way." },
+         {
+            input: "3",
+            expectedOutput: "3",
+            isHidden: false,
+            explanation: "1+1+1, 1+2, 2+1",
+         },
+         {
+            input: "1",
+            expectedOutput: "1",
+            isHidden: false,
+            explanation: "One step, one way.",
+         },
          { input: "10", expectedOutput: "89", isHidden: true },
          { input: "45", expectedOutput: "1836311903", isHidden: true },
          { input: "80", expectedOutput: "37889062373143906", isHidden: true },
@@ -189,12 +253,28 @@ const problems = [
       constraints: ["1 <= length <= 100000", "Brackets only"],
       examples: [
          { input: "()[]{}", output: "true" },
-         { input: "(]", output: "false", explanation: "A round bracket cannot close a square one." },
+         {
+            input: "(]",
+            output: "false",
+            explanation: "A round bracket cannot close a square one.",
+         },
       ],
-      starterCode: starter("push an opening bracket, pop when the matching one closes"),
+      starterCode: starter(
+         "push an opening bracket, pop when the matching one closes",
+      ),
       testCases: [
-         { input: "()[]{}", expectedOutput: "true", isHidden: false, explanation: "Three pairs, each closed straight away." },
-         { input: "(]", expectedOutput: "false", isHidden: false, explanation: "The wrong kind of bracket closes it." },
+         {
+            input: "()[]{}",
+            expectedOutput: "true",
+            isHidden: false,
+            explanation: "Three pairs, each closed straight away.",
+         },
+         {
+            input: "(]",
+            expectedOutput: "false",
+            isHidden: false,
+            explanation: "The wrong kind of bracket closes it.",
+         },
          { input: "([{}])", expectedOutput: "true", isHidden: true },
          { input: "(((", expectedOutput: "false", isHidden: true },
          { input: ")(", expectedOutput: "false", isHidden: true },
@@ -224,10 +304,22 @@ const problems = [
             explanation: "The run 4 -1 2 1 adds up to 6.",
          },
       ],
-      starterCode: starter("keep the best total ending here and the best seen so far"),
+      starterCode: starter(
+         "keep the best total ending here and the best seen so far",
+      ),
       testCases: [
-         { input: "9\n-2 1 -3 4 -1 2 1 -5 4", expectedOutput: "6", isHidden: false, explanation: "4 + -1 + 2 + 1 = 6" },
-         { input: "1\n1", expectedOutput: "1", isHidden: false, explanation: "One number is the whole answer." },
+         {
+            input: "9\n-2 1 -3 4 -1 2 1 -5 4",
+            expectedOutput: "6",
+            isHidden: false,
+            explanation: "4 + -1 + 2 + 1 = 6",
+         },
+         {
+            input: "1\n1",
+            expectedOutput: "1",
+            isHidden: false,
+            explanation: "One number is the whole answer.",
+         },
          { input: "5\n-5 -4 -3 -2 -1", expectedOutput: "-1", isHidden: true },
          { input: "5\n5 4 -1 7 8", expectedOutput: "23", isHidden: true },
          { input: "3\n-1 0 -2", expectedOutput: "0", isHidden: true },
@@ -249,16 +341,40 @@ const problems = [
          "",
          "The shared opening, or `-1` when the words share nothing.",
       ].join("\n"),
-      constraints: ["1 <= n <= 200", "1 <= length of a word <= 200", "Lowercase letters only"],
+      constraints: [
+         "1 <= n <= 200",
+         "1 <= length of a word <= 200",
+         "Lowercase letters only",
+      ],
       examples: [
          { input: "3\nflower\nflow\nflight", output: "fl" },
-         { input: "3\ndog\nracecar\ncar", output: "-1", explanation: "They share nothing, so print -1." },
+         {
+            input: "3\ndog\nracecar\ncar",
+            output: "-1",
+            explanation: "They share nothing, so print -1.",
+         },
       ],
-      starterCode: starter("compare the first word against the rest, character by character"),
+      starterCode: starter(
+         "compare the first word against the rest, character by character",
+      ),
       testCases: [
-         { input: "3\nflower\nflow\nflight", expectedOutput: "fl", isHidden: false, explanation: "All three start with fl." },
-         { input: "1\nalone", expectedOutput: "alone", isHidden: false, explanation: "One word shares all of itself." },
-         { input: "3\ndog\nracecar\ncar", expectedOutput: "-1", isHidden: true },
+         {
+            input: "3\nflower\nflow\nflight",
+            expectedOutput: "fl",
+            isHidden: false,
+            explanation: "All three start with fl.",
+         },
+         {
+            input: "1\nalone",
+            expectedOutput: "alone",
+            isHidden: false,
+            explanation: "One word shares all of itself.",
+         },
+         {
+            input: "3\ndog\nracecar\ncar",
+            expectedOutput: "-1",
+            isHidden: true,
+         },
          { input: "2\nsame\nsame", expectedOutput: "same", isHidden: true },
          { input: "3\nabab\nab\nabc", expectedOutput: "ab", isHidden: true },
       ],
@@ -279,15 +395,37 @@ const problems = [
          "",
          "All `n + m` numbers on one line, smallest first, separated by single spaces.",
       ].join("\n"),
-      constraints: ["0 <= n, m <= 100000", "1 <= n + m", "-10^9 <= each number <= 10^9"],
+      constraints: [
+         "0 <= n, m <= 100000",
+         "1 <= n + m",
+         "-10^9 <= each number <= 10^9",
+      ],
       examples: [{ input: "3 3\n1 2 3\n2 5 6", output: "1 2 2 3 5 6" }],
       starterCode: starter("walk both lists at once and take the smaller head"),
       testCases: [
-         { input: "3 3\n1 2 3\n2 5 6", expectedOutput: "1 2 2 3 5 6", isHidden: false, explanation: "The two 2s both stay." },
-         { input: "1 0\n1\n\n", expectedOutput: "1", isHidden: false, explanation: "The second list is empty." },
+         {
+            input: "3 3\n1 2 3\n2 5 6",
+            expectedOutput: "1 2 2 3 5 6",
+            isHidden: false,
+            explanation: "The two 2s both stay.",
+         },
+         {
+            input: "1 0\n1\n\n",
+            expectedOutput: "1",
+            isHidden: false,
+            explanation: "The second list is empty.",
+         },
          { input: "0 1\n\n7", expectedOutput: "7", isHidden: true },
-         { input: "2 3\n-5 -1\n-4 -3 0", expectedOutput: "-5 -4 -3 -1 0", isHidden: true },
-         { input: "3 3\n1 1 1\n1 1 1", expectedOutput: "1 1 1 1 1 1", isHidden: true },
+         {
+            input: "2 3\n-5 -1\n-4 -3 0",
+            expectedOutput: "-5 -4 -3 -1 0",
+            isHidden: true,
+         },
+         {
+            input: "3 3\n1 1 1\n1 1 1",
+            expectedOutput: "1 1 1 1 1 1",
+            isHidden: true,
+         },
       ],
    },
    {
@@ -314,10 +452,22 @@ const problems = [
             explanation: "All the land is joined, so it is one island.",
          },
       ],
-      starterCode: starter("walk out from each unvisited piece of land and sink it"),
+      starterCode: starter(
+         "walk out from each unvisited piece of land and sink it",
+      ),
       testCases: [
-         { input: "4 5\n11110\n11010\n11000\n00000", expectedOutput: "1", isHidden: false, explanation: "Every 1 is reachable from every other." },
-         { input: "4 5\n11000\n11000\n00100\n00011", expectedOutput: "3", isHidden: false, explanation: "Three separate patches." },
+         {
+            input: "4 5\n11110\n11010\n11000\n00000",
+            expectedOutput: "1",
+            isHidden: false,
+            explanation: "Every 1 is reachable from every other.",
+         },
+         {
+            input: "4 5\n11000\n11000\n00100\n00011",
+            expectedOutput: "3",
+            isHidden: false,
+            explanation: "Three separate patches.",
+         },
          { input: "1 1\n0", expectedOutput: "0", isHidden: true },
          { input: "1 1\n1", expectedOutput: "1", isHidden: true },
          { input: "3 3\n101\n010\n101", expectedOutput: "5", isHidden: true },
@@ -345,10 +495,22 @@ const problems = [
             explanation: "2 3 7 101 is four numbers long.",
          },
       ],
-      starterCode: starter("keep the smallest tail for each length and search it"),
+      starterCode: starter(
+         "keep the smallest tail for each length and search it",
+      ),
       testCases: [
-         { input: "8\n10 9 2 5 3 7 101 18", expectedOutput: "4", isHidden: false, explanation: "2 3 7 101" },
-         { input: "1\n7", expectedOutput: "1", isHidden: false, explanation: "One number is already a run of one." },
+         {
+            input: "8\n10 9 2 5 3 7 101 18",
+            expectedOutput: "4",
+            isHidden: false,
+            explanation: "2 3 7 101",
+         },
+         {
+            input: "1\n7",
+            expectedOutput: "1",
+            isHidden: false,
+            explanation: "One number is already a run of one.",
+         },
          { input: "5\n5 4 3 2 1", expectedOutput: "1", isHidden: true },
          { input: "7\n7 7 7 7 7 7 7", expectedOutput: "1", isHidden: true },
          { input: "6\n1 3 6 7 9 4", expectedOutput: "5", isHidden: true },
@@ -366,7 +528,10 @@ const problems = [
          "",
          "Line 1: the first word. Line 2: the second word.",
       ].join("\n"),
-      constraints: ["1 <= length of each word <= 500", "Lowercase letters only"],
+      constraints: [
+         "1 <= length of each word <= 500",
+         "Lowercase letters only",
+      ],
       examples: [
          {
             input: "horse\nros",
@@ -376,8 +541,18 @@ const problems = [
       ],
       starterCode: starter("fill a table of prefix against prefix"),
       testCases: [
-         { input: "horse\nros", expectedOutput: "3", isHidden: false, explanation: "Replace, remove, remove." },
-         { input: "same\nsame", expectedOutput: "0", isHidden: false, explanation: "Nothing to change." },
+         {
+            input: "horse\nros",
+            expectedOutput: "3",
+            isHidden: false,
+            explanation: "Replace, remove, remove.",
+         },
+         {
+            input: "same\nsame",
+            expectedOutput: "0",
+            isHidden: false,
+            explanation: "Nothing to change.",
+         },
          { input: "intention\nexecution", expectedOutput: "5", isHidden: true },
          { input: "a\nb", expectedOutput: "1", isHidden: true },
          { input: "abcdef\na", expectedOutput: "5", isHidden: true },

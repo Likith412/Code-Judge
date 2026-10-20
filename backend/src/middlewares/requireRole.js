@@ -9,6 +9,7 @@ const requireRole = (roles) => {
    const unknown = allowed.filter((role) => !ROLES.includes(role));
 
    if (!allowed.length) throw new Error("requireRole: no roles given");
+
    if (unknown.length)
       throw new Error(`requireRole: no such role: ${unknown.join(", ")}`);
 

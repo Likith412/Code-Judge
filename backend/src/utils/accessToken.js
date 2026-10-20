@@ -7,6 +7,7 @@ const {
    JWT_AUDIENCE,
    ACCESS_TOKEN_TTL,
 } = require("../config/env");
+
 const { ApiError } = require("./ApiError");
 
 const ALGORITHM = "HS256";
@@ -41,6 +42,7 @@ function verifyAccessToken(token) {
       });
    } catch (err) {
       const expired = err.name === "TokenExpiredError";
+
       throw ApiError.unauthenticated(
          expired ? "Access token expired" : "Access token is not valid",
       );

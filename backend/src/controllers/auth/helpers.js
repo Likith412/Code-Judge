@@ -46,6 +46,7 @@ const publicUser = (user) => ({
 // Token in the body for memory, refresh token in a cookie the page cannot read.
 const sendLogin = (res, status, { accessToken, refreshToken, user }) => {
    setRefreshCookie(res, refreshToken);
+
    res.status(status).json({ accessToken, user: publicUser(user) });
 };
 
@@ -182,6 +183,7 @@ async function issueLink({ userId, type, ttlMs, ip }, session) {
          { userId, type, usedAt: null },
          { session: active },
       );
+
       await AuthToken.create(
          [
             {
@@ -210,8 +212,10 @@ async function consumeLink(raw, type, session) {
    }).session(session);
 
    if (!token) throw new ApiError("LINK_INVALID", "This link is not valid");
+
    if (token.usedAt)
       throw new ApiError("LINK_USED", "This link has already been used");
+
    if (token.expiresAt < new Date())
       throw new ApiError("LINK_EXPIRED", "This link has expired");
 

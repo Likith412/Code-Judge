@@ -45,10 +45,12 @@ async function publishStatus(submission, status) {
    for (let attempt = 0; ; attempt += 1) {
       try {
          await redis.publish(STATUS_CHANNEL, JSON.stringify(message));
+
          return;
       } catch (err) {
          if (attempt === PUBLISH_RETRY_MS.length) {
             logger.warn({ err: err.message, ...message }, "could not publish");
+
             return;
          }
 

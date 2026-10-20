@@ -68,6 +68,7 @@ if (require.main === module) {
       .then(disconnectDatabase)
       .catch(async (err) => {
          logger.error(err.message);
+
          await disconnectDatabase();
          process.exit(1);
       });

@@ -1,11 +1,6 @@
 // Every case in one box, to the fields a submission keeps.
 const runner = require("./dockerRunner");
-const {
-   MESSAGE_LIMIT,
-   cut,
-   caseVerdict,
-   sampleResult,
-} = require("./verdict");
+const { MESSAGE_LIMIT, cut, caseVerdict, sampleResult } = require("./verdict");
 
 // Submit stops at the first failure. Run goes through every sample.
 async function runCases(submission, problem, cases) {
@@ -13,6 +8,7 @@ async function runCases(submission, problem, cases) {
       timeLimitMs: problem.timeLimitMs,
       memoryLimitMb: problem.memoryLimitMb,
    };
+
    const stopEarly = !submission.isSampleRun;
 
    // The container is sized to this problem's memory limit.
@@ -52,6 +48,7 @@ async function runCases(submission, problem, cases) {
          if (fields.status === "ACCEPTED") {
             fields.status = verdict.status;
             fields.failedTestIndex = position;
+
             if (verdict.message)
                fields.errorMessage = cut(verdict.message, MESSAGE_LIMIT);
 

@@ -29,7 +29,9 @@ async function startWorker() {
       await checkSandbox();
 
       const pending = await requeuePending();
-      if (pending) logger.info(`${pending} unfinished submissions in the queue`);
+
+      if (pending)
+         logger.info(`${pending} unfinished submissions in the queue`);
 
       // Its own connection, which waits on Redis forever.
       worker = new Worker(QUEUE_NAME, judgeJob, {
@@ -61,6 +63,7 @@ async function shutdown(signal) {
 
    try {
       if (worker) await worker.close();
+
       await queue.close();
       await disconnectRedis();
       await disconnectDatabase();

@@ -132,6 +132,7 @@ async function startBox(language, { memoryLimitMb }) {
       await container.start();
    } catch (err) {
       await destroy(box);
+
       throw err;
    }
 
@@ -144,6 +145,7 @@ async function exitCode(execution) {
       const info = await execution.inspect();
 
       if (!info.Running) return info.ExitCode;
+
       await sleep(20);
    }
 
@@ -162,6 +164,7 @@ async function exec(
       AttachStdout: true,
       AttachStderr: true,
    });
+
    const stream = await execution.start({ hijack: true, stdin: true });
    const started = process.hrtime.bigint();
 
@@ -201,6 +204,7 @@ async function exec(
 
    // Send input, then close stdin so the program sees the end.
    stream.end(input);
+
    await finished;
    clearTimeout(timer);
 
@@ -252,6 +256,7 @@ async function prepare(language, sourceCode, limits) {
       return { box, compileError: null };
    } catch (err) {
       await destroy(box);
+
       throw err;
    }
 }
