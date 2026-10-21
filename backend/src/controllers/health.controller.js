@@ -1,3 +1,4 @@
+// The one /api/health route.
 const { databaseState } = require("../config/db");
 const { redisState } = require("../config/redis");
 

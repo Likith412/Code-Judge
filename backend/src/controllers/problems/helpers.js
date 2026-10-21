@@ -1,26 +1,78 @@
 // Shared by the problem handlers. Nothing here touches res: it returns a value.
-const { Problem, Submission, TestCase } = require("../../models");
+const { Problem, Submission, TestCase, Contest } = require("../../models");
+
 const { ApiError } = require("../../utils/ApiError");
 const { slugify } = require("../../utils/slug");
 const { RESERVED_SLUGS } = require("../../utils/constants");
 const { runTransaction } = require("../../utils/transaction");
+const { containsText } = require("../../utils/search");
 
 /* ---- who is allowed to see and do what -------------------------------- */
 
-// Only these two roles know a draft exists.
 const canSeeDrafts = (user) =>
    Boolean(user) && (user.role === "SETTER" || user.role === "ADMIN");
 
-// Only a USER submits code, so only a USER has progress to filter on.
 const canSolve = (user) => user?.role === "USER";
 
-// A setter owns what they wrote. An admin owns everything.
 const owns = (user, problem) =>
    user.role === "ADMIN" || String(problem.createdBy) === String(user._id);
 
+// problemId => solved for a USER, or => null for anyone who cannot solve.
+function solvedChecker(user) {
+   if (!canSolve(user)) return () => null;
+
+   const solved = new Set((user.solvedProblemIds || []).map(String));
+
+   return (problemId) => solved.has(String(problemId));
+}
+
+/* ---- the list page ---------------------------------------------------- */
+
+const attemptedIds = (user) =>
+   Submission.distinct("problemId", { userId: user._id, isSampleRun: false });
+
+// Anyone without the role sees published problems, whatever they asked for.
+async function listFilter(query, user) {
+   const status = canSeeDrafts(user) ? query.status : "PUBLISHED";
+   const filter = {};
+
+   if (status === "PUBLISHED") filter.isPublished = true;
+   if (status === "DRAFT") filter.isPublished = false;
+   if (query.mine && user) filter.createdBy = user._id;
+
+   if (canSolve(user) && query.progress) {
+      const solved = user.solvedProblemIds || [];
+
+      if (query.progress === "solved") filter._id = { $in: solved };
+      if (query.progress === "unsolved") filter._id = { $nin: solved };
+
+      if (query.progress === "tried") {
+         filter._id = { $in: await attemptedIds(user), $nin: solved };
+      }
+   }
+
+   if (query.difficulty) filter.difficulty = query.difficulty;
+
+   if (query.tags?.length) filter.tags = { $in: query.tags };
+
+   if (query.q) filter.title = containsText(query.q);
+
+   return filter;
+}
+
+async function tagCounts(filter) {
+   const rows = await Problem.aggregate([
+      { $match: filter },
+      { $unwind: "$tags" },
+      { $group: { _id: "$tags", count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+   ]);
+
+   return rows.map((row) => ({ tag: row._id, count: row.count }));
+}
+
 /* ---- shaping the response --------------------------------------------- */
 
-// Percent of submissions that passed, or null before the first one.
 const acceptanceRate = (stats) =>
    stats.totalSubmissions > 0
       ? Math.round(
@@ -28,7 +80,6 @@ const acceptanceRate = (stats) =>
         ) / 10
       : null;
 
-// Starter code for the languages this problem accepts, and nothing else.
 const starterFor = (problem) =>
    Object.fromEntries(
       problem.supportedLanguages.map((language) => [
@@ -37,15 +88,6 @@ const starterFor = (problem) =>
       ]),
    );
 
-// The problems this person has finished, as a set of strings to test against.
-const solvedSet = (user) =>
-   new Set((user?.solvedProblemIds || []).map((id) => String(id)));
-
-// Problems this person has pressed Submit on. Sample runs do not count.
-const attemptedIds = (user) =>
-   Submission.distinct("problemId", { userId: user._id, isSampleRun: false });
-
-// One row in the list. Draft fields are added only for a setter or admin.
 const problemCard = (problem, { showDraftFields, solved }) => ({
    id: problem._id,
    title: problem.title,
@@ -55,7 +97,6 @@ const problemCard = (problem, { showDraftFields, solved }) => ({
    acceptanceRate: acceptanceRate(problem.stats),
    solvedByCount: problem.stats.solvedByCount,
    totalSubmissions: problem.stats.totalSubmissions,
-   // Only for someone signed in: nobody else has a solved list to check.
    ...(solved === null ? {} : { solved }),
    ...(showDraftFields
       ? {
@@ -75,20 +116,6 @@ const sampleCase = (row) => ({
    explanation: row.explanation,
 });
 
-// The full case, for the setter who owns the problem.
-const fullCase = (row) => ({
-   id: row._id,
-   order: row.order,
-   input: row.input,
-   expectedOutput: row.expectedOutput,
-   isHidden: row.isHidden,
-   explanation: row.explanation,
-   weight: row.weight,
-   createdAt: row.createdAt,
-   updatedAt: row.updatedAt,
-});
-
-// The problem page. Samples are passed in, already filtered.
 const problemDetail = (problem, samples, solved = null) => ({
    id: problem._id,
    title: problem.title,
@@ -117,84 +144,59 @@ const problemDetail = (problem, samples, solved = null) => ({
    updatedAt: problem.updatedAt,
 });
 
-// The cases the problem page may show. Hidden ones are left in the database.
 const loadSamples = (problemId) =>
    TestCase.find({ problemId, isHidden: false })
       .sort({ order: 1 })
       .select("order input expectedOutput explanation");
 
-/* ---- building the list query ------------------------------------------ */
-
-const SORTS = {
-   NEWEST: { createdAt: -1 },
-   OLDEST: { createdAt: 1 },
-   TITLE: { title: 1 },
-   // By rank, not by name, or HARD would land between EASY and MEDIUM.
-   DIFFICULTY: { difficultyRank: 1, title: 1 },
-};
-
-const listSort = (key) => SORTS[key] || SORTS.NEWEST;
-
-// Anyone without the role sees published problems, whatever they asked for.
-async function listFilter(query, user) {
-   const status = canSeeDrafts(user) ? query.status : "PUBLISHED";
-   const filter = {};
-
-   if (status === "PUBLISHED") filter.isPublished = true;
-   if (status === "DRAFT") filter.isPublished = false;
-
-   if (query.mine && user) filter.createdBy = user._id;
-
-   // Meaningless to a visitor, and to a setter who cannot submit at all.
-   if (canSolve(user) && query.progress) {
-      const solved = user.solvedProblemIds || [];
-
-      if (query.progress === "solved") filter._id = { $in: solved };
-      if (query.progress === "unsolved") filter._id = { $nin: solved };
-
-      // Submitted to at least once and still not solved.
-      if (query.progress === "tried") {
-         filter._id = { $in: await attemptedIds(user), $nin: solved };
-      }
-   }
-
-   if (query.difficulty) filter.difficulty = query.difficulty;
-   // Any one of them is enough, so picking more tags widens the list.
-   if (query.tags?.length) filter.tags = { $in: query.tags };
-
-   // Whole words only: the text index does not match a half typed one.
-   if (query.q) filter.$text = { $search: query.q };
-
-   return filter;
-}
-
 /* ---- loading a problem before changing it ----------------------------- */
 
-async function loadOwnProblem(id, user) {
-   const problem = await Problem.findById(id);
+const inAnyContest = (problemId, session = null) =>
+   Contest.exists({ "problems.problemId": problemId }).session(session);
+
+async function assertContestEditable(problemId, session = null) {
+   const locked = await Contest.exists({
+      "problems.problemId": problemId,
+      isPublished: true,
+   }).session(session);
+
+   if (locked) {
+      throw ApiError.badRequest(
+         "Problems in a published contest cannot be changed",
+      );
+   }
+}
+
+async function loadOwnProblem(id, user, session = null) {
+   const problem = await Problem.findById(id).session(session);
 
    if (!problem) throw ApiError.notFound("No such problem");
-   if (!owns(user, problem))
+
+   if (!owns(user, problem)) {
       throw ApiError.forbidden("This is not your problem");
+   }
 
    return problem;
 }
 
-async function loadOwnTestCase(params, user) {
-   const problem = await loadOwnProblem(params.id, user);
-   const testCase = await TestCase.findOne({
-      _id: params.testCaseId,
-      problemId: problem._id,
-   });
+async function loadEditableProblem(id, user, session = null) {
+   const problem = await loadOwnProblem(id, user, session);
 
-   if (!testCase) throw ApiError.notFound("No such test case");
+   await assertContestEditable(problem._id, session);
 
-   return { problem, testCase };
+   return problem;
+}
+
+async function loadOwnProblemBySlug(slug, user) {
+   const found = await Problem.findOne({ slug }).select("_id");
+
+   if (!found) throw ApiError.notFound("No such problem");
+
+   return loadOwnProblem(found._id, user);
 }
 
 /* ---- slugs ------------------------------------------------------------ */
 
-// Use the slug that was sent, else make one from the title.
 function pickSlug({ title, slug }) {
    const chosen = slug || slugify(title || "");
 
@@ -205,18 +207,6 @@ function pickSlug({ title, slug }) {
    }
 
    return chosen;
-}
-
-// Every tag on the problems this person may see, with how many carry it.
-async function tagCounts(filter) {
-   const rows = await Problem.aggregate([
-      { $match: filter },
-      { $unwind: "$tags" },
-      { $group: { _id: "$tags", count: { $sum: 1 } } },
-      { $sort: { _id: 1 } },
-   ]);
-
-   return rows.map((row) => ({ tag: row._id, count: row.count }));
 }
 
 async function assertSlugFree(slug, exceptId) {
@@ -232,123 +222,14 @@ async function assertSlugFree(slug, exceptId) {
    }
 }
 
-// Two setters saving the same slug at the same moment land here.
 const isDuplicateKey = (err) => Boolean(err) && err.code === 11000;
 
-/* ---- test case bookkeeping -------------------------------------------- */
+/* ---- publishing ------------------------------------------------------- */
 
-// Copy the real count onto the problem, so the list page needs no join.
-async function syncTestCaseCount(problemId, session) {
-   const count = await TestCase.countDocuments({ problemId }, { session });
-
-   await Problem.updateOne(
-      { _id: problemId },
-      { $set: { testCaseCount: count } },
-      { session },
-   );
-
-   return count;
-}
-
-// New cases go last. Gaps left by a delete are fine, only the order matters.
-async function nextOrder(problemId, session) {
-   const last = await TestCase.findOne({ problemId })
-      .session(session)
-      .sort({ order: -1 })
-      .select("order");
-
-   return last ? last.order + 1 : 1;
-}
-
-// Two adds at once can pick the same number; the unique index refuses the loser.
-const ORDER_ATTEMPTS = 25;
-
-// The retry sits outside, because a clash aborts the whole transaction.
-async function insertTestCase(problemId, fields) {
-   for (let attempt = 1; attempt <= ORDER_ATTEMPTS; attempt += 1) {
-      try {
-         return await runTransaction(async (session) => {
-            const [testCase] = await TestCase.create(
-               [
-                  {
-                     ...fields,
-                     problemId,
-                     order: await nextOrder(problemId, session),
-                  },
-               ],
-               { session },
-            );
-
-            return {
-               testCase,
-               testCaseCount: await syncTestCaseCount(problemId, session),
-            };
-         });
-      } catch (err) {
-         // Anything but a clash on the order is a real failure.
-         if (!isDuplicateKey(err)) throw err;
-      }
-   }
-
-   // Never a 500: the caller is told plainly to send it again.
-   throw ApiError.conflict("Could not pick a run order, please try again");
-}
-
-// Case, count and guards in one step, so a second delete cannot slip past.
-async function removeTestCase(problem, testCase) {
-   return runTransaction(async (session) => {
-      await assertCaseRemains(problem, session);
-      await assertSampleRemains(problem, testCase, session);
-
-      await testCase.deleteOne({ session });
-
-      return syncTestCaseCount(problem._id, session);
-   });
-}
-
-// The problem and every case it owns go together, or neither goes.
-async function removeProblem(problem) {
-   await runTransaction(async (session) => {
-      await TestCase.deleteMany({ problemId: problem._id }, { session });
-      await problem.deleteOne({ session });
-   });
-}
-
-// A published problem keeps something to judge with. Counted live, never copied.
-async function assertCaseRemains(problem, session) {
-   if (!problem.isPublished) return;
-
-   const total = await TestCase.countDocuments(
-      { problemId: problem._id },
-      { session },
-   );
-
-   if (total <= 1) {
-      throw ApiError.badRequest(
-         "A published problem needs at least one test case",
-      );
-   }
-}
-
-// And it must keep one sample, or the Run button has nothing to run.
-async function assertSampleRemains(problem, testCase, session) {
-   if (!problem.isPublished || testCase.isHidden) return;
-
-   const samples = await TestCase.countDocuments(
-      { problemId: problem._id, isHidden: false },
-      { session },
-   );
-
-   if (samples <= 1) {
-      throw ApiError.badRequest(
-         "A published problem needs at least one sample case",
-      );
-   }
-}
-
-// A published problem needs cases to judge with and a sample to show.
-async function assertPublishable(problem) {
-   const total = await TestCase.countDocuments({ problemId: problem._id });
+async function assertPublishable(problem, session = null) {
+   const total = await TestCase.countDocuments({
+      problemId: problem._id,
+   }).session(session);
 
    if (total < 1) {
       throw ApiError.badRequest("Add at least one test case before publishing");
@@ -357,7 +238,7 @@ async function assertPublishable(problem) {
    const samples = await TestCase.countDocuments({
       problemId: problem._id,
       isHidden: false,
-   });
+   }).session(session);
 
    if (samples < 1) {
       throw ApiError.badRequest(
@@ -366,31 +247,47 @@ async function assertPublishable(problem) {
    }
 }
 
+// A contest question is published with its contest, never on its own.
+async function assertCanPublish(problem, session) {
+   if (await inAnyContest(problem._id, session)) {
+      throw ApiError.badRequest(
+         "Contest problems stay private; publish the contest instead",
+      );
+   }
+
+   await assertPublishable(problem, session);
+}
+
+async function removeProblem(problem) {
+   await runTransaction(async (session) => {
+      if (await inAnyContest(problem._id, session)) {
+         throw ApiError.badRequest(
+            "Remove this problem from its draft contest before deleting it",
+         );
+      }
+
+      await TestCase.deleteMany({ problemId: problem._id }, { session });
+      await problem.deleteOne({ session });
+   });
+}
+
 module.exports = {
    canSeeDrafts,
-   canSolve,
    owns,
+   solvedChecker,
+   listFilter,
+   tagCounts,
    problemCard,
    problemDetail,
-   solvedSet,
-   attemptedIds,
-   sampleCase,
-   fullCase,
    loadSamples,
-   listFilter,
-   listSort,
+   assertContestEditable,
    loadOwnProblem,
-   loadOwnTestCase,
+   loadEditableProblem,
+   loadOwnProblemBySlug,
    pickSlug,
    assertSlugFree,
-   tagCounts,
    isDuplicateKey,
-   syncTestCaseCount,
-   nextOrder,
-   insertTestCase,
-   removeTestCase,
-   removeProblem,
-   assertCaseRemains,
-   assertSampleRemains,
    assertPublishable,
+   assertCanPublish,
+   removeProblem,
 };

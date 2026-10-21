@@ -1,3 +1,4 @@
+// The one /api/users route: a public profile.
 const { Problem, User } = require("../models");
 const { ApiError } = require("../utils/ApiError");
 

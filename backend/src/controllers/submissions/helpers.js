@@ -1,22 +1,45 @@
 // Shared by the submission handlers. Nothing here touches res: it returns a value.
-const { Problem, Submission, TestCase, User } = require("../../models");
-const { ApiError } = require("../../utils/ApiError");
 const {
-   JUDGED_LANGUAGES,
-   PENDING_STATUSES,
-} = require("../../utils/constants");
+   Problem,
+   Submission,
+   TestCase,
+   User,
+   Contest,
+} = require("../../models");
 
-// At most this many waiting at once, per user.
-const MAX_WAITING = 5;
+const { ApiError } = require("../../utils/ApiError");
+const { JUDGED_LANGUAGES, PENDING_STATUSES } = require("../../utils/constants");
+const {
+   findParticipant,
+   loadContestProblem,
+   assertCanSubmit,
+} = require("../contests/helpers");
 
 /* ---- before saving ---------------------------------------------------- */
 
-// A USER only ever sees published problems, so a draft is simply missing.
-async function loadSolvableProblem(problemId, language) {
+// Outside a contest a USER only sees published problems, so a draft is missing.
+async function loadPracticeProblem(problemId) {
    const problem = await Problem.findOne({ _id: problemId, isPublished: true });
 
    if (!problem) throw ApiError.notFound("No such problem");
 
+   return problem;
+}
+
+async function loadContestProblemToSubmit(contestId, problemId, user, now) {
+   const contest = await Contest.findById(contestId);
+
+   if (!contest) throw ApiError.notFound("No such contest");
+
+   const problem = await loadContestProblem(contest, problemId);
+   const participant = await findParticipant(contest._id, user);
+
+   assertCanSubmit(contest, participant, now);
+
+   return problem;
+}
+
+function assertLanguage(problem, language) {
    if (!problem.supportedLanguages.includes(language)) {
       throw ApiError.badRequest("This problem does not take that language");
    }
@@ -25,8 +48,6 @@ async function loadSolvableProblem(problemId, language) {
    if (!JUDGED_LANGUAGES.includes(language)) {
       throw ApiError.badRequest("Only Java can run for now");
    }
-
-   return problem;
 }
 
 const countWaiting = (userId) =>
@@ -34,18 +55,19 @@ const countWaiting = (userId) =>
 
 const tooMany = () =>
    ApiError.rateLimited(
-      `You already have ${MAX_WAITING} waiting to be judged. Wait for one to finish.`,
+      "You already have 5 waiting to be judged. Wait for one to finish.",
    );
 
 // One user cannot fill the queue.
 async function checkWaiting(userId) {
-   if ((await countWaiting(userId)) >= MAX_WAITING) throw tooMany();
+   if ((await countWaiting(userId)) >= 5) throw tooMany();
 }
 
 // Counts again after saving, to catch requests sent at the same moment.
 async function confirmWaiting(submission) {
-   if ((await countWaiting(submission.userId)) > MAX_WAITING) {
+   if ((await countWaiting(submission.userId)) > 5) {
       await Submission.deleteOne({ _id: submission._id });
+
       throw tooMany();
    }
 }
@@ -84,12 +106,16 @@ const submissionView = (row) => ({
    errorMessage: row.errorMessage,
    sampleResults: row.sampleResults,
    isSampleRun: row.isSampleRun,
+   contestId: row.contestId,
    createdAt: row.createdAt,
    judgedAt: row.judgedAt,
 });
 
-// What the detail page shows around the code: the problem and whose it is.
 async function submissionContext(submission) {
+   const contest = submission.contestId
+      ? await Contest.findById(submission.contestId).select("slug title")
+      : null;
+
    const [problem, author] = await Promise.all([
       Problem.findById(submission.problemId).select(
          "title slug timeLimitMs memoryLimitMb",
@@ -98,6 +124,7 @@ async function submissionContext(submission) {
    ]);
 
    return {
+      contest: contest ? { slug: contest.slug, title: contest.title } : null,
       problem: problem && {
          title: problem.title,
          slug: problem.slug,
@@ -115,13 +142,13 @@ function mineFilter(userId, query) {
    const filter = { userId, isSampleRun: false };
 
    if (query.problemId) filter.problemId = query.problemId;
+   if (query.contestId) filter.contestId = query.contestId;
    if (query.language) filter.language = query.language;
    if (query.status) filter.status = query.status;
 
    return filter;
 }
 
-// Titles for a page of rows, in one query.
 async function problemsById(ids) {
    const problems = await Problem.find({ _id: { $in: ids } }).select(
       "title slug",
@@ -130,17 +157,20 @@ async function problemsById(ids) {
    return new Map(problems.map((problem) => [String(problem._id), problem]));
 }
 
-// Every problem this user submitted to, for the problem filter.
 async function submittedProblems(userId) {
    const ids = await Submission.distinct("problemId", {
       userId,
       isSampleRun: false,
    });
+
    const problems = await Problem.find({ _id: { $in: ids } })
       .select("title")
       .sort({ title: 1 });
 
-   return problems.map((problem) => ({ id: problem._id, title: problem.title }));
+   return problems.map((problem) => ({
+      id: problem._id,
+      title: problem.title,
+   }));
 }
 
 // One row in the list. The code is left out, the detail page has it.
@@ -160,8 +190,27 @@ const historyRow = (row, problems) => {
    };
 };
 
+async function submittedContests(userId) {
+   const ids = await Submission.distinct("contestId", {
+      userId,
+      isSampleRun: false,
+      contestId: { $ne: null },
+   });
+
+   const contests = await Contest.find({ _id: { $in: ids } })
+      .select("title")
+      .sort({ startTime: -1 });
+
+   return contests.map((contest) => ({
+      id: contest._id,
+      title: contest.title,
+   }));
+}
+
 module.exports = {
-   loadSolvableProblem,
+   loadPracticeProblem,
+   loadContestProblemToSubmit,
+   assertLanguage,
    checkWaiting,
    confirmWaiting,
    countCases,
@@ -171,5 +220,6 @@ module.exports = {
    mineFilter,
    problemsById,
    submittedProblems,
+   submittedContests,
    historyRow,
 };

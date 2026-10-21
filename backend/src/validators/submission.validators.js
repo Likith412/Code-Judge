@@ -8,6 +8,7 @@ const MAX_SOURCE_CHARS = 64_000;
 
 const createSubmissionSchema = z.object({
    problemId: objectId("Not a problem id"),
+   contestId: objectId("Not a contest id").optional(),
    language: z.enum(LANGUAGES),
    sourceCode: z
       .string()
@@ -29,6 +30,8 @@ const listMineQuerySchema = z.preprocess(
       page: z.coerce.number().int().min(1).default(1),
       limit: z.coerce.number().int().min(1).max(50).default(20),
       problemId: objectId("Not a problem id").optional(),
+      // Only the ones made inside this contest.
+      contestId: objectId("Not a contest id").optional(),
       language: z.enum(LANGUAGES).optional(),
       status: z.enum(SUBMISSION_STATUSES).optional(),
    }),

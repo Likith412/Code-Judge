@@ -1,37 +1,37 @@
 // One handler per /api/problems route. What they share is in ./helpers.
 const { Problem, TestCase } = require("../../models");
+
 const { ApiError } = require("../../utils/ApiError");
 const { recordAudit } = require("../../utils/audit");
+const { runTransaction } = require("../../utils/transaction");
+const { pageView } = require("../../utils/pagination");
 
 const {
    canSeeDrafts,
-   canSolve,
    owns,
+   solvedChecker,
+   listFilter,
+   tagCounts,
    problemCard,
    problemDetail,
-   solvedSet,
-   fullCase,
    loadSamples,
-   listFilter,
-   listSort,
-   tagCounts,
    loadOwnProblem,
-   loadOwnTestCase,
+   loadEditableProblem,
+   loadOwnProblemBySlug,
    pickSlug,
    assertSlugFree,
    isDuplicateKey,
-   insertTestCase,
-   removeTestCase,
+   assertCanPublish,
    removeProblem,
-   assertSampleRemains,
-   assertPublishable,
 } = require("./helpers");
 
-// The list page needs these fields and no others.
-const CARD_FIELDS =
-   "title slug difficulty tags stats isPublished testCaseCount createdAt";
-
-const SLUG_TAKEN = "Another problem already uses that slug";
+const {
+   fullCase,
+   insertTestCase,
+   saveTestCase,
+   loadOwnTestCase,
+   removeTestCase,
+} = require("./testCases");
 
 /* ---- reading, open to everyone ---------------------------------------- */
 
@@ -41,32 +41,35 @@ async function listProblems(req, res) {
 
    const [rows, total] = await Promise.all([
       Problem.find(filter)
-         .select(CARD_FIELDS)
-         .sort(listSort(query.sort))
+         .select(
+            "title slug difficulty tags stats isPublished testCaseCount createdAt",
+         )
+         .sort(
+            {
+               NEWEST: { createdAt: -1 },
+               OLDEST: { createdAt: 1 },
+               TITLE: { title: 1 },
+               // By rank, not by name, or HARD would land between EASY and MEDIUM.
+               DIFFICULTY: { difficultyRank: 1, title: 1 },
+            }[query.sort],
+         )
          .skip((query.page - 1) * query.limit)
          .limit(query.limit),
       Problem.countDocuments(filter),
    ]);
 
    const showDraftFields = canSeeDrafts(req.user);
-   const solved = canSolve(req.user) ? solvedSet(req.user) : null;
+   const isSolved = solvedChecker(req.user);
 
-   res.json({
-      problems: rows.map((row) =>
-         problemCard(row, {
-            showDraftFields,
-            solved: solved ? solved.has(String(row._id)) : null,
-         }),
-      ),
-      page: query.page,
-      limit: query.limit,
-      total,
-      totalPages: Math.max(1, Math.ceil(total / query.limit)),
-   });
+   const cards = rows.map((row) =>
+      problemCard(row, { showDraftFields, solved: isSolved(row._id) }),
+   );
+
+   res.json(pageView("problems", cards, total, query));
 }
 
+// Same visibility rules as the list, so the counts match what you can see.
 async function listTags(req, res) {
-   // Same visibility rules as the list, so the counts match what you can see.
    const filter = await listFilter(req.valid.query, req.user);
    const tags = await tagCounts(filter);
 
@@ -83,24 +86,21 @@ async function getProblem(req, res) {
    if (!mayRead) throw ApiError.notFound("No such problem");
 
    const samples = await loadSamples(problem._id);
-   const solved = canSolve(req.user)
-      ? solvedSet(req.user).has(String(problem._id))
-      : null;
 
-   res.json({ problem: problemDetail(problem, samples, solved) });
+   res.json({
+      problem: problemDetail(
+         problem,
+         samples,
+         solvedChecker(req.user)(problem._id),
+      ),
+   });
 }
 
 /* ---- writing a problem, setter and admin only ------------------------- */
 
 // The editor's url has the slug. Writes still go by id, which never changes.
 async function getProblemForEdit(req, res) {
-   const found = await Problem.findOne({ slug: req.valid.params.slug }).select(
-      "_id",
-   );
-
-   if (!found) throw ApiError.notFound("No such problem");
-
-   const problem = await loadOwnProblem(found._id, req.user);
+   const problem = await loadOwnProblemBySlug(req.valid.params.slug, req.user);
    const samples = await loadSamples(problem._id);
 
    res.json({ problem: problemDetail(problem, samples) });
@@ -122,7 +122,9 @@ async function createProblem(req, res) {
       });
    } catch (err) {
       // Someone saved the same slug in the moment between the check and here.
-      if (isDuplicateKey(err)) throw ApiError.conflict(SLUG_TAKEN);
+      if (isDuplicateKey(err))
+         throw ApiError.conflict("Another problem already uses that slug");
+
       throw err;
    }
 
@@ -140,21 +142,33 @@ async function createProblem(req, res) {
 
 async function updateProblem(req, res) {
    const body = req.valid.body;
-   const problem = await loadOwnProblem(req.valid.params.id, req.user);
-
-   if (body.slug) await assertSlugFree(body.slug, problem._id);
-
-   // Going live is the one change with a condition attached.
-   if (body.isPublished === true && !problem.isPublished) {
-      await assertPublishable(problem);
-   }
-
-   problem.set(body);
+   let problem;
 
    try {
-      await problem.save();
+      problem = await runTransaction(async (session) => {
+         const found = await loadEditableProblem(
+            req.valid.params.id,
+            req.user,
+            session,
+         );
+
+         if (body.slug) await assertSlugFree(body.slug, found._id);
+
+         // The publish checks run whenever a draft is being published.
+         if (body.isPublished === true && !found.isPublished) {
+            await assertCanPublish(found, session);
+         }
+
+         found.set(body);
+
+         await found.save({ session });
+
+         return found;
+      });
    } catch (err) {
-      if (isDuplicateKey(err)) throw ApiError.conflict(SLUG_TAKEN);
+      if (isDuplicateKey(err))
+         throw ApiError.conflict("Another problem already uses that slug");
+
       throw err;
    }
 
@@ -180,7 +194,6 @@ async function deleteProblem(req, res) {
       throw ApiError.badRequest("Unpublish the problem before deleting it");
    }
 
-   // One transaction: the problem never loses its cases without going itself.
    await removeProblem(problem);
 
    await recordAudit({
@@ -199,6 +212,7 @@ async function deleteProblem(req, res) {
 
 async function listTestCases(req, res) {
    const problem = await loadOwnProblem(req.valid.params.id, req.user);
+
    const rows = await TestCase.find({ problemId: problem._id }).sort({
       order: 1,
    });
@@ -207,26 +221,22 @@ async function listTestCases(req, res) {
 }
 
 async function addTestCase(req, res) {
-   const body = req.valid.body;
    const problem = await loadOwnProblem(req.valid.params.id, req.user);
 
-   const { testCase, testCaseCount } = await insertTestCase(problem._id, body);
+   const { testCase, testCaseCount } = await insertTestCase(
+      problem._id,
+      req.valid.body,
+   );
 
    res.status(201).json({ testCase: fullCase(testCase), testCaseCount });
 }
 
 async function updateTestCase(req, res) {
-   const body = req.valid.body;
-   const { problem, testCase } = await loadOwnTestCase(
+   const testCase = await saveTestCase(
       req.valid.params,
       req.user,
+      req.valid.body,
    );
-
-   // Hiding the last sample would leave a live problem with nothing to show.
-   if (body.isHidden === true) await assertSampleRemains(problem, testCase);
-
-   testCase.set(body);
-   await testCase.save();
 
    res.json({ testCase: fullCase(testCase) });
 }

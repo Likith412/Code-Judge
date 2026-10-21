@@ -1,26 +1,25 @@
 // One handler per /api/auth route. What they share is in ./helpers.
 const bcrypt = require("bcrypt");
 
+const { User, Session } = require("../../models");
+
 const logger = require("../../config/logger");
 const {
    sendVerificationEmail,
    sendPasswordResetEmail,
 } = require("../../config/mailer");
-
-const { User, Session } = require("../../models");
 const { ApiError } = require("../../utils/ApiError");
 const { signAccessToken } = require("../../utils/accessToken");
 const { hashToken } = require("../../utils/tokens");
 const { disconnectUser } = require("../../sockets");
 const { runTransaction } = require("../../utils/transaction");
+const { toMs } = require("../../utils/duration");
 const {
    clearRefreshCookie,
    readRefreshCookie,
 } = require("../../utils/cookies");
 
 const {
-   VERIFY_TTL_MS,
-   RESET_TTL_MS,
    DUMMY_HASH,
    VAGUE_REPLY,
    publicUser,
@@ -70,7 +69,7 @@ async function register(req, res) {
             {
                userId: created._id,
                type: "EMAIL_VERIFY",
-               ttlMs: VERIFY_TTL_MS,
+               ttlMs: toMs("24h"),
                ip,
             },
             session,
@@ -91,7 +90,7 @@ async function resendVerification(req, res) {
       const raw = await issueLink({
          userId: user._id,
          type: "EMAIL_VERIFY",
-         ttlMs: VERIFY_TTL_MS,
+         ttlMs: toMs("24h"),
          ip: req.ip,
       });
 
@@ -403,7 +402,7 @@ async function forgotPassword(req, res) {
       const raw = await issueLink({
          userId: user._id,
          type: "PASSWORD_RESET",
-         ttlMs: RESET_TTL_MS,
+         ttlMs: toMs("30m"),
          ip: req.ip,
       });
 

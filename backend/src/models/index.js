@@ -6,4 +6,6 @@ module.exports = {
    Problem: require("./Problem"),
    TestCase: require("./TestCase"),
    Submission: require("./Submission"),
+   Contest: require("./Contest"),
+   ContestParticipant: require("./ContestParticipant"),
 };

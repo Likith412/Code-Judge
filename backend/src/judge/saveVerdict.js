@@ -1,6 +1,7 @@
 // Writes the verdict and every counter it moves, all at once or not at all.
 const { Problem, Submission, User } = require("../models");
 const { runTransaction } = require("../utils/transaction");
+const { updateContestScore } = require("../controllers/contests/helpers");
 
 // Run is not history, and a system error is not the user's fault.
 const counts = (submission, status) =>
@@ -53,7 +54,10 @@ async function countVerdict(submission, status, session) {
       { _id: userId, solvedProblemIds: { $ne: problemId } },
       {
          $push: { solvedProblemIds: problemId },
-         $inc: { "stats.solvedTotal": 1, [SOLVED_FIELD[problem.difficulty]]: 1 },
+         $inc: {
+            "stats.solvedTotal": 1,
+            [SOLVED_FIELD[problem.difficulty]]: 1,
+         },
       },
       { session },
    );
@@ -79,6 +83,8 @@ async function saveVerdict(submission, fields) {
       if (saved.modifiedCount && counts(submission, fields.status)) {
          await countVerdict(submission, fields.status, session);
       }
+
+      if (saved.modifiedCount) await updateContestScore(submission, session);
    });
 }
 

@@ -2,9 +2,9 @@
 const bcrypt = require("bcrypt");
 const { randomBytes } = require("node:crypto");
 
-const { BCRYPT_ROUNDS, REFRESH_TOKEN_TTL } = require("../../config/env");
-const logger = require("../../config/logger");
 const { User, Session, AuthToken } = require("../../models");
+
+const { BCRYPT_ROUNDS, REFRESH_TOKEN_TTL } = require("../../config/env");
 const { ApiError } = require("../../utils/ApiError");
 const { randomToken, hashToken } = require("../../utils/tokens");
 const { recordAudit } = require("../../utils/audit");
@@ -13,16 +13,10 @@ const { toMs } = require("../../utils/duration");
 const { parseUserAgent } = require("../../utils/userAgent");
 const { setRefreshCookie } = require("../../utils/cookies");
 
-const VERIFY_TTL_MS = toMs("24h");
-const RESET_TTL_MS = toMs("30m");
-
-// Two tabs can refresh at once, so a just-spent token is allowed this long.
-const GRACE_WINDOW_MS = 10_000;
-
-// Used when the email is unknown, so both wrong answers take the same time.
+// Hashed once at start-up; used when the email is unknown, so both wrong answers take the same time.
 const DUMMY_HASH = bcrypt.hashSync("not-a-real-password", BCRYPT_ROUNDS);
 
-// Register and forgot-password say this whether or not the address is known.
+// One shared reply, so register and forgot-password can never drift apart and reveal an account.
 const VAGUE_REPLY = {
    message: "If that address needs it, a link is on its way.",
 };
@@ -122,7 +116,8 @@ async function findGraceSession(spentHash, req) {
 
    if (!session) return null;
 
-   const fresh = Date.now() - session.createdAt.getTime() < GRACE_WINDOW_MS;
+   // Two tabs can refresh at once, so a just-spent token is allowed for 10 seconds.
+   const fresh = Date.now() - session.createdAt.getTime() < 10_000;
    const sameDevice =
       session.ip === req.ip && session.userAgent === req.get("user-agent");
 
@@ -267,8 +262,6 @@ const usernameTaken = () =>
    ]);
 
 module.exports = {
-   VERIFY_TTL_MS,
-   RESET_TTL_MS,
    DUMMY_HASH,
    VAGUE_REPLY,
 
