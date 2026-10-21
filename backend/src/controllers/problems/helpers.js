@@ -40,6 +40,11 @@ async function listFilter(query, user) {
    if (status === "DRAFT") filter.isPublished = false;
    if (query.mine && user) filter.createdBy = user._id;
 
+   // A setter's drafts are their own, as on the detail page; only an admin sees all.
+   if (user?.role === "SETTER" && status !== "PUBLISHED") {
+      filter.$or = [{ isPublished: true }, { createdBy: user._id }];
+   }
+
    if (canSolve(user) && query.progress) {
       const solved = user.solvedProblemIds || [];
 

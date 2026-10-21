@@ -23,6 +23,7 @@ const {
    listedContest,
    contestProblemRows,
    solvedInContest,
+   standingsFilter,
    rankingRow,
    assertContestProblems,
    loadEditableContest,
@@ -84,6 +85,9 @@ async function getProblem(req, res) {
    const contest = await loadContest(req.valid.params.slug, req.user);
    const participant = await findParticipant(contest._id, req.user);
 
+   // Before the slug lookup, so every slug gets the same answer before the start.
+   assertProblemsOpen(contest, req.user, participant);
+
    const found = await Problem.findOne({
       slug: req.valid.params.problemSlug,
    }).select("_id");
@@ -91,8 +95,6 @@ async function getProblem(req, res) {
    if (!found) throw ApiError.notFound("No such problem");
 
    const problem = await loadContestProblem(contest, found._id);
-
-   assertProblemsOpen(contest, req.user, participant);
 
    const samples = await loadSamples(problem._id);
 
@@ -118,7 +120,7 @@ async function getProblem(req, res) {
 async function rankings(req, res) {
    const contest = await loadContest(req.valid.params.slug, req.user);
    const query = req.valid.query;
-   const filter = { contestId: contest._id };
+   const filter = await standingsFilter(contest._id);
 
    const [rows, total] = await Promise.all([
       ContestParticipant.find(filter)
@@ -130,7 +132,7 @@ async function rankings(req, res) {
    ]);
 
    const ranked = await Promise.all(
-      rows.map((row) => rankingRow(contest, row)),
+      rows.map((row) => rankingRow(contest, row, filter)),
    );
 
    res.json(pageView("rankings", ranked, total, query));
@@ -141,32 +143,38 @@ async function rankings(req, res) {
 async function joinContest(req, res) {
    const contest = await loadContest(req.valid.params.slug, req.user);
 
-   await runTransaction(async (session) => {
-      // Writing the contest serializes joining with edits and other joins.
-      const open = await Contest.updateOne(
-         { _id: contest._id, isPublished: true, endTime: { $gt: new Date() } },
-         { $set: { updatedAt: new Date() } },
-         { session },
-      );
+   try {
+      await runTransaction(async (session) => {
+         const open = await Contest.exists({
+            _id: contest._id,
+            isPublished: true,
+            endTime: { $gt: new Date() },
+         }).session(session);
 
-      if (!open.matchedCount) {
-         throw ApiError.badRequest("This contest is not open for registration");
-      }
+         if (!open) {
+            throw ApiError.badRequest(
+               "This contest is not open for registration",
+            );
+         }
 
-      // Joining twice is fine: the second time does nothing.
-      if (await findParticipant(contest._id, req.user, session)) return;
+         // Joining twice is fine: the second time does nothing.
+         if (await findParticipant(contest._id, req.user, session)) return;
 
-      await ContestParticipant.create(
-         [{ contestId: contest._id, userId: req.user._id }],
-         { session },
-      );
+         await ContestParticipant.create(
+            [{ contestId: contest._id, userId: req.user._id }],
+            { session },
+         );
 
-      await Contest.updateOne(
-         { _id: contest._id },
-         { $inc: { participantCount: 1 } },
-         { session },
-      );
-   });
+         await Contest.updateOne(
+            { _id: contest._id },
+            { $inc: { participantCount: 1 } },
+            { session },
+         );
+      });
+   } catch (error) {
+      // Two Joins at the same moment: the unique index stops the second one.
+      if (error.code !== 11000) throw error;
+   }
 
    res.json({ message: "You joined the contest" });
 }

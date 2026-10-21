@@ -29,14 +29,16 @@ async function loadPracticeProblem(problemId) {
 async function loadContestProblemToSubmit(contestId, problemId, user, now) {
    const contest = await Contest.findById(contestId);
 
-   if (!contest) throw ApiError.notFound("No such contest");
+   // A draft looks missing, as it does on the contest page.
+   if (!contest || !contest.isPublished) {
+      throw ApiError.notFound("No such contest");
+   }
 
-   const problem = await loadContestProblem(contest, problemId);
    const participant = await findParticipant(contest._id, user);
 
    assertCanSubmit(contest, participant, now);
 
-   return problem;
+   return loadContestProblem(contest, problemId);
 }
 
 function assertLanguage(problem, language) {

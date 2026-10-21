@@ -4,6 +4,7 @@ const {
    ContestParticipant,
    Problem,
    Submission,
+   User,
 } = require("../../models");
 
 const { ApiError } = require("../../utils/ApiError");
@@ -211,10 +212,17 @@ const solvedInContest = (participant, problemId) =>
 
 /* ---- rankings --------------------------------------------------------- */
 
+// Banned accounts are left out, so they take no place in the standings.
+async function standingsFilter(contestId) {
+   const banned = await User.distinct("_id", { status: "BANNED" });
+
+   return { contestId, userId: { $nin: banned } };
+}
+
 // Equal score and penalty share a rank, including across page boundaries.
-async function rankOf(contestId, row) {
+async function rankOf(filter, row) {
    const ahead = await ContestParticipant.countDocuments({
-      contestId,
+      ...filter,
       $or: [
          { score: { $gt: row.score } },
          { score: row.score, penaltyMinutes: { $lt: row.penaltyMinutes } },
@@ -224,14 +232,14 @@ async function rankOf(contestId, row) {
    return ahead + 1;
 }
 
-async function rankingRow(contest, row) {
+async function rankingRow(contest, row, filter) {
    const labelOf = (problemId) =>
       contest.problems.find(
          (problem) => String(problem.problemId) === String(problemId),
       )?.label;
 
    return {
-      rank: await rankOf(contest._id, row),
+      rank: await rankOf(filter, row),
       username: row.userId?.status === "ACTIVE" ? row.userId.username : null,
       score: row.score,
       penaltyMinutes: row.penaltyMinutes,
@@ -372,6 +380,7 @@ module.exports = {
    listedContest,
    contestProblemRows,
    solvedInContest,
+   standingsFilter,
    rankingRow,
    assertContestProblems,
    loadEditableContest,
