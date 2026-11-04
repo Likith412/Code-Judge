@@ -34,6 +34,7 @@ const AccountTab = () => {
       displayName: user.displayName || "",
       bio: user.bio || "",
    });
+
    const [fields, setFields] = useState({});
    const [problem, setProblem] = useState(null);
    const [saved, setSaved] = useState(false);
@@ -69,8 +70,7 @@ const AccountTab = () => {
       <form className="settings-panel" onSubmit={onSubmitForm} noValidate>
          <Notice>{problem}</Notice>
 
-         {/* Shown, not edited. The address is the login name and the thing the
-             confirmation link proved, so it is permanent. */}
+         {/* Shown, not edited: the address is the login and was confirmed. */}
          <div className="field">
             <label>Email</label>
 
@@ -298,6 +298,7 @@ const DevicesTab = () => {
             <span className="settings-device-when">
                {formatWhen(session.lastUsedAt)}
             </span>
+
             <span className="settings-device-when">
                {formatWhen(session.signedInAt)}
             </span>

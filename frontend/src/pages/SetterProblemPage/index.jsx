@@ -26,6 +26,7 @@ const SetterProblemPage = () => {
                <EditProblemPage />
             </div>
          )}
+
          {shows("test-cases") && (
             <div hidden={tab !== "test-cases"}>
                <TestCasesPage />

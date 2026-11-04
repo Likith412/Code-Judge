@@ -8,6 +8,7 @@ import UserContext from "../../context/UserContext";
 
 import Field from "../../components/Field";
 import Notice from "../../components/Notice";
+import { readLinkToken } from "../../utils/linkToken";
 
 import "./index.css";
 
@@ -30,7 +31,7 @@ const DEAD_LINKS = {
 
 const ResetPasswordPage = () => {
    const [params] = useSearchParams();
-   const token = params.get("token");
+   const token = readLinkToken(params);
 
    const { user, signOut } = useContext(UserContext);
 
@@ -41,7 +42,9 @@ const ResetPasswordPage = () => {
    const [done, setDone] = useState(false);
 
    // No token at all is decided before the first render.
-   const [deadLink, setDeadLink] = useState(() => (token ? null : DEAD_LINKS.LINK_INVALID));
+   const [deadLink, setDeadLink] = useState(() =>
+      token ? null : DEAD_LINKS.LINK_INVALID,
+   );
 
    const onSubmitForm = async (event) => {
       event.preventDefault();
@@ -61,7 +64,8 @@ const ResetPasswordPage = () => {
          const { code, message } = apiError(error);
 
          if (DEAD_LINKS[code]) setDeadLink(DEAD_LINKS[code]);
-         else if (code === "VALIDATION_ERROR") setFieldError(fieldErrors(error).password);
+         else if (code === "VALIDATION_ERROR")
+            setFieldError(fieldErrors(error).password);
          else setProblem(message);
       } finally {
          setBusy(false);
@@ -74,8 +78,8 @@ const ResetPasswordPage = () => {
             <h1 className="cj-screen-title">Password changed</h1>
 
             <p className="cj-prose">
-               Every device was signed out, including this one. Sign in with your new
-               password.
+               Every device was signed out, including this one. Sign in with
+               your new password.
             </p>
 
             <Link to="/login" className="btn btn-primary">
@@ -101,7 +105,9 @@ const ResetPasswordPage = () => {
 
                <Link
                   to="/forgot-password"
-                  className={deadLink.signIn ? "btn btn-secondary" : "btn btn-primary"}
+                  className={
+                     deadLink.signIn ? "btn btn-secondary" : "btn btn-primary"
+                  }
                >
                   Request a new link
                </Link>
@@ -128,11 +134,10 @@ const ResetPasswordPage = () => {
                required
             />
 
-            {/* Said before the button, not after: it is the kind of thing
-                people want to know while deciding, not once it has happened. */}
+            {/* Said before the button, while people are still deciding. */}
             <p className="reset-warning">
-               <strong>This signs you out everywhere</strong>, including this device. You’ll
-               sign in again with the new password.
+               <strong>This signs you out everywhere</strong>, including this
+               device. You’ll sign in again with the new password.
             </p>
 
             <button

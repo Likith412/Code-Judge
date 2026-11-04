@@ -1,0 +1,18 @@
+/* The same block as an empty Setter list: title, sentence, button below. */
+.load-failed {
+   padding: 40px 0;
+   border-bottom: 1px solid var(--color-divider);
+}
+
+.load-failed-title {
+   margin-bottom: 6px;
+   font-family: var(--font-heading);
+   font-size: 20px;
+   font-weight: 800;
+}
+
+.load-failed-message {
+   margin: 0 0 var(--space-4);
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}

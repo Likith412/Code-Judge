@@ -1,0 +1,122 @@
+.contest-editor-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+   gap: 32px;
+   align-items: start;
+}
+
+.contest-editor-fields {
+   display: flex;
+   flex-direction: column;
+   gap: 16px;
+}
+
+.contest-editor-actions {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: center;
+   gap: 16px;
+   margin-top: 24px;
+}
+
+/* ---- the right column: what is in the contest, then what can be added */
+
+.contest-editor-panel-head {
+   display: flex;
+   align-items: baseline;
+   justify-content: space-between;
+   gap: 12px;
+   flex-wrap: wrap;
+   padding-bottom: 8px;
+   border-bottom: 2px solid var(--color-divider);
+   font-size: 13px;
+}
+
+.contest-editor-panel-title {
+   font-family: var(--font-heading);
+   font-size: 16px;
+   font-weight: 800;
+}
+
+.contest-editor-library-head {
+   margin-top: 32px;
+}
+
+.contest-editor-empty {
+   margin: 0;
+   padding: 16px 0;
+   border-bottom: 1px solid var(--color-divider);
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}
+
+/* Letter, title, points, remove. */
+.contest-editor-problem {
+   display: grid;
+   grid-template-columns: 20px minmax(0, 1fr) auto auto;
+   gap: 12px;
+   align-items: center;
+   padding: 10px 0;
+   border-bottom: 1px solid var(--color-divider);
+}
+
+/* A plain bold letter, no block behind it. */
+.contest-editor-letter {
+   font-family: var(--font-heading);
+   font-size: 15px;
+   font-weight: 800;
+}
+
+.contest-editor-title {
+   min-width: 0;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+   font-size: 14px;
+   font-weight: 600;
+}
+
+.contest-editor-points {
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+   font-size: 13px;
+}
+
+.contest-editor-points .input {
+   width: 80px;
+   min-height: 32px;
+   padding: 4px 8px;
+   text-align: right;
+}
+
+.contest-editor-search {
+   display: flex;
+   gap: 10px;
+   margin: 12px 0 4px;
+}
+
+/* Title, difficulty, add. */
+.contest-editor-choice {
+   display: grid;
+   grid-template-columns: minmax(0, 1fr) auto 72px;
+   gap: 12px;
+   align-items: center;
+   padding: 8px 0;
+   border-bottom: 1px solid var(--color-divider);
+}
+
+.contest-editor-choice .btn {
+   padding: 4px 12px;
+   font-size: 13px;
+}
+
+/* Already in the contest: says so, instead of a greyed-out Add. */
+.contest-editor-added:disabled,
+.contest-editor-added:disabled:hover,
+.contest-editor-added:disabled:active {
+   opacity: 1;
+   background: none;
+   color: var(--color-success-700);
+   cursor: default;
+}

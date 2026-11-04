@@ -50,6 +50,7 @@ client.interceptors.response.use(null, async (error) => {
       await refreshSession();
    } catch (refreshError) {
       sessionLost(refreshError.response?.data?.error?.code);
+
       throw error;
    }
 
@@ -80,4 +81,5 @@ function fieldErrors(error) {
 }
 
 export { client, refreshSession, apiError, fieldErrors };
+
 export default client;

@@ -14,8 +14,7 @@
    align-items: stretch;
 }
 
-/* Fills its tab when narrow, and the wide rules below give it a width you
-   can drag. */
+/* Fills its tab when narrow; the wide rules below make its width draggable. */
 .problem-question {
    display: flex;
    flex-direction: column;
@@ -153,16 +152,29 @@
    padding: 20px 24px 0;
 }
 
-.problem-head-line {
+/* The way back to the contest, with its clock on the right. */
+.problem-contest-line {
    display: flex;
    align-items: baseline;
-   gap: 14px;
+   justify-content: space-between;
+   gap: 12px;
+   flex-wrap: wrap;
+   margin-bottom: 10px;
+   font-size: 14px;
+}
+
+/* Centred, so the badge sits in the middle of the title, not on its baseline. */
+.problem-head-line {
+   display: flex;
+   align-items: center;
+   gap: 12px;
    flex-wrap: wrap;
 }
 
 .problem-title {
    margin: 0;
    font-size: 26px;
+   line-height: 1.15;
 }
 
 .problem-meta {

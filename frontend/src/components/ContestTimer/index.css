@@ -1,0 +1,49 @@
+/* A small label over a big clock. Red only for the last five minutes. */
+.contest-timer {
+   display: inline-flex;
+   flex-direction: column;
+   align-items: flex-end;
+   gap: 2px;
+}
+
+.contest-timer-label {
+   font-size: 11px;
+   letter-spacing: 0.1em;
+   text-transform: uppercase;
+   color: var(--color-neutral-700);
+}
+
+.contest-timer-value {
+   font-family: var(--font-heading);
+   font-size: 28px;
+   font-weight: 800;
+   line-height: 1.1;
+   font-variant-numeric: tabular-nums;
+}
+
+.contest-timer-ended .contest-timer-label {
+   font-size: 13px;
+   font-weight: 600;
+}
+
+.contest-timer-warn .contest-timer-value,
+.contest-timer-warn .contest-timer-label {
+   color: var(--color-accent);
+}
+
+/* One line, for a list row or the problem header. */
+.contest-timer-compact {
+   flex-direction: row;
+   align-items: baseline;
+   gap: 6px;
+}
+
+.contest-timer-compact .contest-timer-value {
+   font-family: inherit;
+   font-size: 13px;
+   font-weight: 600;
+}
+
+.contest-timer-compact .contest-timer-label {
+   font-size: 11px;
+}

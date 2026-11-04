@@ -1,0 +1,92 @@
+/* The rule runs under the whole row, button included, like the Setter header. */
+.contest-heading {
+   display: flex;
+   justify-content: space-between;
+   align-items: flex-end;
+   gap: 16px;
+   flex-wrap: wrap;
+   margin-bottom: var(--space-4);
+   padding-bottom: var(--space-4);
+   border-bottom: 2px solid var(--color-divider);
+}
+
+.contest-heading .cj-page-title {
+   margin: 0;
+   padding: 0;
+   border: 0;
+}
+
+.contest-row {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: 16px;
+   padding: 18px 0;
+   border-bottom: 1px solid var(--color-divider);
+   text-decoration: none;
+   color: var(--color-text);
+}
+
+.contest-row:hover {
+   color: var(--color-text);
+   background: var(--color-surface);
+}
+
+.contest-note {
+   font-size: 13px;
+   color: var(--color-neutral-700);
+   margin: 10px 0;
+}
+
+/* Search and state, the same row as the Problems and Users pages. */
+.contest-tools {
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: 12px;
+   margin-bottom: 4px;
+}
+
+.contest-search {
+   flex: 1;
+   min-width: 180px;
+}
+
+.contest-select {
+   width: 170px;
+}
+
+.contest-empty {
+   padding: 16px 0;
+   border-bottom: 1px solid var(--color-divider);
+}
+
+@media (max-width: 640px) {
+   .contest-select {
+      flex: 1;
+   }
+}
+
+.contest-row-title {
+   display: flex;
+   align-items: baseline;
+   gap: 10px;
+   flex-wrap: wrap;
+}
+
+/* A contest you joined, with your score in it. */
+.contest-mine {
+   font-size: 12px;
+   font-weight: 600;
+   color: var(--color-success-700);
+}
+
+.contest-joined-filter {
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+   font-size: 14px;
+   white-space: nowrap;
+   cursor: pointer;
+}

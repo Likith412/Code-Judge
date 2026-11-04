@@ -7,6 +7,7 @@ function pagesToShow(page, totalPages) {
       Math.max(1, page - Math.floor(width / 2)),
       totalPages - width + 1,
    );
+
    const pages = [];
 
    for (let number = first; number < first + width; number += 1) {

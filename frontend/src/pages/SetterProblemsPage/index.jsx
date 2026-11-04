@@ -18,6 +18,19 @@ const apiStatusConstants = {
 
 const PAGE_SIZE = 20;
 
+const STATUS_OPTIONS = [
+   { value: "", label: "All statuses" },
+   { value: "PUBLISHED", label: "Published" },
+   { value: "DRAFT", label: "Draft" },
+];
+
+const DIFFICULTY_OPTIONS = [
+   { value: "", label: "All difficulties" },
+   { value: "EASY", label: "Easy" },
+   { value: "MEDIUM", label: "Medium" },
+   { value: "HARD", label: "Hard" },
+];
+
 // A setter sees the problems they wrote. An admin sees every problem.
 const SetterProblemsPage = () => {
    const { user } = useContext(UserContext);
@@ -26,6 +39,20 @@ const SetterProblemsPage = () => {
    const navigate = useNavigate();
    const [searchParams, setSearchParams] = useSearchParams();
    const page = Number(searchParams.get("page")) || 1;
+   const q = searchParams.get("q") || "";
+   const status = searchParams.get("status") || "";
+   const difficulty = searchParams.get("difficulty") || "";
+   const filtered = Boolean(q || status || difficulty);
+
+   // What is typed and picked. It applies on Search, and follows the url.
+   const [draft, setDraft] = useState({ q, status, difficulty });
+   const [synced, setSynced] = useState(`${q}:${status}:${difficulty}`);
+   const [hint, setHint] = useState("");
+
+   if (`${q}:${status}:${difficulty}` !== synced) {
+      setSynced(`${q}:${status}:${difficulty}`);
+      setDraft({ q, status, difficulty });
+   }
 
    const [result, setResult] = useState(null);
    const [apiStatus, setApiStatus] = useState(apiStatusConstants.initial);
@@ -40,7 +67,9 @@ const SetterProblemsPage = () => {
 
          try {
             const data = await listProblems({
-               status: "ALL",
+               status: status || "ALL",
+               difficulty,
+               q,
                mine: admin ? "" : "true",
                page,
                limit: PAGE_SIZE,
@@ -63,7 +92,28 @@ const SetterProblemsPage = () => {
       return () => {
          cancelled = true;
       };
-   }, [admin, page, reloadCount]);
+   }, [admin, page, q, status, difficulty, reloadCount]);
+
+   // Empty filters leave the url. A new search goes back to page one.
+   const onSearch = (event) => {
+      event.preventDefault();
+
+      const text = draft.q.trim();
+
+      // The API needs two characters to search by title.
+      if (text.length === 1) {
+         setHint("Type at least 2 characters to search.");
+
+         return;
+      }
+
+      setHint("");
+      setSearchParams(
+         Object.fromEntries(
+            Object.entries({ ...draft, q: text }).filter(([, value]) => value),
+         ),
+      );
+   };
 
    // The row opens the problem as users see it. Edit opens the editor.
    const renderRow = (problem) => {
@@ -85,9 +135,10 @@ const SetterProblemsPage = () => {
                   className={
                      problem.isPublished
                         ? "setter-status setter-status-live"
-                        : "setter-status"
+                        : "setter-status setter-status-draft"
                   }
                >
+                  <span className="setter-status-dot" aria-hidden="true" />
                   {problem.isPublished ? "Published" : "Draft"}
                </span>
             </span>
@@ -113,6 +164,17 @@ const SetterProblemsPage = () => {
    };
 
    const renderList = () => {
+      if (result.problems.length === 0 && filtered) {
+         return (
+            <div className="setter-empty">
+               <div className="setter-empty-title">No problems match</div>
+               <p className="setter-empty-body">
+                  Try another title, status or difficulty.
+               </p>
+            </div>
+         );
+      }
+
       if (result.problems.length === 0) {
          return (
             <div className="setter-empty">
@@ -120,6 +182,7 @@ const SetterProblemsPage = () => {
                <p className="setter-empty-body">
                   Write your first one. It stays a draft until you publish it.
                </p>
+
                <Link className="btn btn-primary" to="/setter/problems/new">
                   New problem
                </Link>
@@ -144,9 +207,14 @@ const SetterProblemsPage = () => {
                limit={result.limit}
                total={result.total}
                totalPages={result.totalPages}
-               onGo={(number) =>
-                  setSearchParams(number > 1 ? { page: String(number) } : {})
-               }
+               onGo={(number) => {
+                  const next = new URLSearchParams(searchParams);
+
+                  if (number > 1) next.set("page", String(number));
+                  else next.delete("page");
+
+                  setSearchParams(next);
+               }}
             />
          </>
       );
@@ -162,6 +230,7 @@ const SetterProblemsPage = () => {
                   <div className="setter-empty-title">
                      Could not load problems
                   </div>
+
                   <p className="setter-empty-body">{failure}</p>
                   <button
                      type="button"
@@ -189,7 +258,11 @@ const SetterProblemsPage = () => {
                   {admin ? "All problems" : "Your problems"}
                </h1>
                <div className="setter-count">
-                  {result ? `${result.total} ${word}, drafts included` : "…"}
+                  {result
+                     ? filtered
+                        ? `${result.total} ${word} match`
+                        : `${result.total} ${word}, drafts included`
+                     : "…"}
                </div>
             </div>
 
@@ -197,6 +270,52 @@ const SetterProblemsPage = () => {
                New problem
             </Link>
          </header>
+
+         <form className="setter-tools" onSubmit={onSearch}>
+            <input
+               className="input setter-search"
+               value={draft.q}
+               onChange={(event) =>
+                  setDraft({ ...draft, q: event.target.value })
+               }
+               placeholder="Search by title"
+               aria-label="Search problems"
+            />
+
+            <select
+               className="input setter-select"
+               value={draft.status}
+               onChange={(event) =>
+                  setDraft({ ...draft, status: event.target.value })
+               }
+               aria-label="Filter by status"
+            >
+               {STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                     {option.label}
+                  </option>
+               ))}
+            </select>
+
+            <select
+               className="input setter-select"
+               value={draft.difficulty}
+               onChange={(event) =>
+                  setDraft({ ...draft, difficulty: event.target.value })
+               }
+               aria-label="Filter by difficulty"
+            >
+               {DIFFICULTY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                     {option.label}
+                  </option>
+               ))}
+            </select>
+
+            <button className="btn btn-secondary">Search</button>
+         </form>
+
+         {hint && <p className="setter-hint">{hint}</p>}
 
          {renderBody()}
       </main>

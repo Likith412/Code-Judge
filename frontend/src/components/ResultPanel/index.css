@@ -52,6 +52,7 @@
       transform: translateY(8px);
       opacity: 0;
    }
+
    to {
       transform: none;
       opacity: 1;
@@ -249,4 +250,3 @@
 .result-io-grid-run {
    margin-top: 8px;
 }
-

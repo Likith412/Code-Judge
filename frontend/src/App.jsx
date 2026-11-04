@@ -19,6 +19,8 @@ import FailureView from "./components/FailureView";
 import GuestRoutes from "./components/GuestRoutes";
 import ProtectedRoutes from "./components/ProtectedRoutes";
 import RoleRoutes from "./components/RoleRoutes";
+import SolverRoutes from "./components/SolverRoutes";
+import { homePath } from "./utils/home";
 
 import ProblemsPage from "./pages/ProblemsPage";
 import ProblemPage from "./pages/ProblemPage";
@@ -36,7 +38,11 @@ import SignedOutPage from "./pages/SignedOutPage";
 import SetterProblemsPage from "./pages/SetterProblemsPage";
 import NewProblemPage from "./pages/NewProblemPage";
 import SetterProblemPage from "./pages/SetterProblemPage";
-import AdminPage from "./pages/AdminPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AuditLogPage from "./pages/AuditLogPage";
+import ContestsPage from "./pages/ContestsPage";
+import ContestPage from "./pages/ContestPage";
+import ContestEditorPage from "./pages/ContestEditorPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 import "./App.css";
@@ -79,6 +85,7 @@ function App() {
             if (status === 401) {
                setUser(null);
                setApiStatus(apiStatusConstants.success);
+
                return;
             }
 
@@ -176,9 +183,19 @@ function App() {
 
          <Routes>
             {/* Open to everyone. */}
-            <Route path="/problems" element={<ProblemsPage />} />
+            {/* The list is for solvers. Setters and admins have their own. */}
+            <Route element={<SolverRoutes />}>
+               <Route path="/problems" element={<ProblemsPage />} />
+            </Route>
+
             <Route path="/problems/:slug" element={<ProblemPage />} />
             <Route path="/u/:username" element={<ProfilePage />} />
+            <Route path="/contests" element={<ContestsPage />} />
+            <Route path="/contests/:slug" element={<ContestPage />} />
+            <Route
+               path="/contests/:contestSlug/problems/:slug"
+               element={<ProblemPage />}
+            />
 
             {/* Only before signing in. */}
             <Route element={<GuestRoutes />}>
@@ -191,18 +208,21 @@ function App() {
                />
             </Route>
 
-            {/* Reached from an email link or after being signed out, so these
-                stay open: a signed-in person can still be holding one. */}
+            {/* Open to all: a signed-in person can still hold one of these links. */}
             <Route path="/verify" element={<VerifyPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/signed-out" element={<SignedOutPage />} />
 
             <Route element={<ProtectedRoutes />}>
-               <Route path="/submissions" element={<SubmissionsPage />} />
+               <Route element={<SolverRoutes />}>
+                  <Route path="/submissions" element={<SubmissionsPage />} />
+               </Route>
+
                <Route
                   path="/submissions/:submissionId"
                   element={<SubmissionPage />}
                />
+
                <Route path="/settings" element={<SettingsPage />} />
             </Route>
 
@@ -211,12 +231,13 @@ function App() {
                   path="/setter/problems"
                   element={<SetterProblemsPage />}
                />
+
                <Route
                   path="/setter/problems/new"
                   element={<NewProblemPage />}
                />
-               {/* The editor and its test cases are tabs: ?tab=test-cases.
-                   Two segments, so no slug can clash with /new above. */}
+
+               {/* Editor and ?tab=test-cases; two segments, so no slug clashes with /new. */}
                <Route
                   path="/setter/problems/:slug/edit"
                   element={<SetterProblemPage />}
@@ -224,10 +245,30 @@ function App() {
             </Route>
 
             <Route element={<RoleRoutes allow={ADMIN} />}>
-               <Route path="/admin" element={<AdminPage />} />
+               {/* Users and the audit log are separate pages. */}
+               <Route
+                  path="/admin"
+                  element={<Navigate to="/admin/users" replace />}
+               />
+
+               <Route path="/admin/users" element={<AdminUsersPage />} />
+               <Route path="/admin/audit" element={<AuditLogPage />} />
+               <Route
+                  path="/admin/contests/new"
+                  element={<ContestEditorPage />}
+               />
+
+               <Route
+                  path="/admin/contests/:slug/edit"
+                  element={<ContestEditorPage />}
+               />
             </Route>
 
-            <Route path="/" element={<Navigate to="/problems" replace />} />
+            <Route
+               path="/"
+               element={<Navigate to={homePath(user)} replace />}
+            />
+
             <Route path="*" element={<NotFoundPage />} />
          </Routes>
       </UserContext.Provider>

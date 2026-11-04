@@ -7,6 +7,7 @@ const EyeIcon = () => (
          stroke="currentColor"
          strokeWidth="1.3"
       />
+
       <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3" />
    </svg>
 );
@@ -18,6 +19,7 @@ const EyeOffIcon = () => (
          stroke="currentColor"
          strokeWidth="1.3"
       />
+
       <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.3" />
       <path
          d="M2.5 13.5 13.5 2.5"

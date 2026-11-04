@@ -12,7 +12,9 @@ function getSubmission(id) {
 // Your own Submit history, newest first. Empty filters are left off the url.
 function listMySubmissions(query = {}) {
    const params = Object.fromEntries(
-      Object.entries(query).filter(([, value]) => value !== "" && value != null),
+      Object.entries(query).filter(
+         ([, value]) => value !== "" && value != null,
+      ),
    );
 
    return client

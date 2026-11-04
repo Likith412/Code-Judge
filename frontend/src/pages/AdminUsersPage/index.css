@@ -1,0 +1,106 @@
+.admin-tools {
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: 12px;
+   margin-bottom: 16px;
+}
+
+.admin-search {
+   flex: 1;
+   min-width: 180px;
+}
+
+.admin-select {
+   width: 150px;
+}
+
+/* The same six columns for the head and every row. */
+.admin-user-head,
+.admin-user-row {
+   display: grid;
+   grid-template-columns: minmax(0, 1fr) 130px 100px 90px 140px 210px;
+   gap: 0 16px;
+   align-items: center;
+}
+
+.admin-user-head {
+   padding: 8px 0;
+   border-bottom: 2px solid var(--color-divider);
+   font-size: 11px;
+   letter-spacing: 0.08em;
+   text-transform: uppercase;
+   color: var(--color-neutral-700);
+}
+
+.admin-user-row {
+   padding: 12px 0;
+   border-bottom: 1px solid var(--color-divider);
+   font-size: 14px;
+}
+
+.admin-user-name {
+   min-width: 0;
+   overflow-wrap: anywhere;
+}
+
+.admin-role-text {
+   font-size: 13px;
+   font-weight: 600;
+   letter-spacing: 0.04em;
+}
+
+.admin-tag-deleted {
+   border: 1px solid var(--color-neutral-300);
+   color: var(--color-neutral-500);
+}
+
+.admin-user-actions {
+   display: flex;
+   justify-content: flex-end;
+   gap: 8px;
+   white-space: nowrap;
+}
+
+.admin-empty {
+   padding: 24px 0;
+}
+
+.admin-dialog-note {
+   font-size: 12px;
+   color: var(--color-neutral-700);
+}
+
+/* Joined and submissions drop out first. */
+@media (max-width: 900px) {
+   .admin-user-head,
+   .admin-user-row {
+      grid-template-columns: minmax(0, 1fr) 130px 100px 210px;
+   }
+
+   .admin-user-joined,
+   .admin-user-latest {
+      display: none;
+   }
+}
+
+/* A phone: each account is a small block. */
+@media (max-width: 640px) {
+   .admin-user-head {
+      display: none;
+   }
+
+   .admin-user-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px 12px;
+   }
+
+   .admin-user-actions {
+      grid-column: 1 / -1;
+      justify-content: flex-start;
+   }
+
+   .admin-select {
+      flex: 1;
+   }
+}

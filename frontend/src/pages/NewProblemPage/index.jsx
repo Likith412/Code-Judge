@@ -65,6 +65,7 @@ const NewProblemPage = () => {
             note="Save it first, then add test cases. Publishing needs at least one, and one sample."
             disabled
          />
+
          <SaveNotice message={message} errors={errors} />
 
          <ProblemForm draft={draft} onChange={set} errors={errors} isNew />

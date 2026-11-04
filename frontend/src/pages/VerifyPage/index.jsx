@@ -6,7 +6,7 @@ import { apiError } from "../../services/api/client";
 
 import Field from "../../components/Field";
 import ResendVerification from "../../components/ResendVerification";
-
+import { readLinkToken } from "../../utils/linkToken";
 
 // Where the email link lands. Four endings, each with a way forward.
 const OUTCOMES = {
@@ -32,11 +32,12 @@ const OUTCOMES = {
 
 const VerifyPage = () => {
    const [params] = useSearchParams();
-   const token = params.get("token");
+   const token = readLinkToken(params);
 
    const [outcome, setOutcome] = useState(() =>
       token ? null : OUTCOMES.LINK_INVALID,
    );
+
    const [email, setEmail] = useState("");
 
    useEffect(() => {
@@ -80,8 +81,7 @@ const VerifyPage = () => {
             </Link>
          )}
 
-         {/* A dead link carries no address, and the server will not say whose
-             it was. So the new one has to be asked for by hand. */}
+         {/* A dead link has no address, so a new one is asked for by hand. */}
          {outcome.resend && (
             <div className="cj-form">
                <Field

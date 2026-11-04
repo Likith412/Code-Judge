@@ -8,6 +8,7 @@ import UserContext from "../../context/UserContext";
 import Field from "../../components/Field";
 import Notice from "../../components/Notice";
 import ResendVerification from "../../components/ResendVerification";
+import { homePath } from "../../utils/home";
 
 import "./index.css";
 
@@ -31,10 +32,12 @@ const LoginPage = () => {
       setProblem(null);
 
       try {
-         await signIn(form);
+         const signedIn = await signIn(form);
 
          // Back to the page they wanted, which ProtectedRoutes remembered.
-         navigate(location.state?.from || "/problems", { replace: true });
+         navigate(location.state?.from || homePath(signedIn), {
+            replace: true,
+         });
       } catch (error) {
          setProblem(apiError(error));
       } finally {
@@ -46,9 +49,7 @@ const LoginPage = () => {
       <main className="cj-main-narrow">
          <h1 className="cj-form-title">Sign in</h1>
 
-         {/* The password was right and the address is not confirmed. That is an
-             unfinished step, not a failure, so it gets the quiet tone and the
-             resend control instead of a red box. */}
+         {/* Right password, unconfirmed address: a quiet note and resend, not an error. */}
          {problem?.code === "EMAIL_NOT_VERIFIED" ? (
             <Notice tone="note">
                <span>

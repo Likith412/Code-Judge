@@ -2,6 +2,7 @@ import { useContext } from "react";
 import { Link, NavLink } from "react-router-dom";
 
 import UserContext from "../../context/UserContext";
+import { homePath } from "../../utils/home";
 
 import "./index.css";
 
@@ -27,31 +28,60 @@ const Navbar = (props) => {
 
    return (
       <nav className="cj-nav">
-         <Link to="/problems" className="cj-brand">
+         <Link to={homePath(user)} className="cj-brand">
             <span className="cj-brand-mark" />
             Code Judge
          </Link>
 
-         <NavLink to="/problems" className={linkClass}>
-            Problems
-         </NavLink>
-
-         {user && (
-            <NavLink to="/submissions" className={linkClass}>
-               Submissions
-            </NavLink>
-         )}
-
-         {isSetter && (
-            <NavLink to="/setter/problems" className={linkClass}>
-               Setter
-            </NavLink>
-         )}
-
+         {/* Each role gets its own links. Setters and admins do not solve. */}
          {isAdmin && (
-            <NavLink to="/admin" className={linkClass}>
-               Admin
-            </NavLink>
+            <>
+               <NavLink to="/admin/users" className={linkClass}>
+                  Users
+               </NavLink>
+
+               <NavLink to="/setter/problems" className={linkClass}>
+                  Problems
+               </NavLink>
+
+               <NavLink to="/contests" className={linkClass}>
+                  Contests
+               </NavLink>
+
+               <NavLink to="/admin/audit" className={linkClass}>
+                  Audit log
+               </NavLink>
+            </>
+         )}
+
+         {isSetter && !isAdmin && (
+            <>
+               <NavLink to="/setter/problems" className={linkClass}>
+                  Problems
+               </NavLink>
+
+               <NavLink to="/contests" className={linkClass}>
+                  Contests
+               </NavLink>
+            </>
+         )}
+
+         {!isSetter && (
+            <>
+               <NavLink to="/problems" className={linkClass}>
+                  Problems
+               </NavLink>
+
+               <NavLink to="/contests" className={linkClass}>
+                  Contests
+               </NavLink>
+
+               {user && (
+                  <NavLink to="/submissions" className={linkClass}>
+                     Submissions
+                  </NavLink>
+               )}
+            </>
          )}
 
          <div className="cj-nav-end">
@@ -62,6 +92,7 @@ const Navbar = (props) => {
                   <NavLink to="/login" className={linkClass}>
                      Sign in
                   </NavLink>
+
                   <Link to="/register" className="btn btn-primary">
                      Register
                   </Link>
@@ -74,7 +105,16 @@ const Navbar = (props) => {
                      <span className="cj-avatar">
                         {user.username.charAt(0).toUpperCase()}
                      </span>
+
                      <span className="cj-me-name">{user.username}</span>
+                     {/* Setters and admins see which role they are signed in as. */}
+                     {user.role !== "USER" && (
+                        <span
+                           className={`cj-me-role cj-me-role-${user.role.toLowerCase()}`}
+                        >
+                           {user.role === "ADMIN" ? "Admin" : "Setter"}
+                        </span>
+                     )}
                   </Link>
 
                   <NavLink to="/settings" className={linkClass}>

@@ -49,8 +49,7 @@ onTokenChange((token) => {
    if (!token) socket?.disconnect();
 });
 
-// Calls onChange(status) when this submission's status changes, and
-// onConnect() each time the socket connects. Returns a stop function.
+// Calls onChange(status) and onConnect() as they happen; returns a stop function.
 function watchSubmission(id, onChange, onConnect) {
    const live = openSocket();
    const handler = (event) => {

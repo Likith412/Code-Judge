@@ -6,6 +6,7 @@ import "./index.css";
 const TestSegments = ({ submission, gap = "" }) => {
    const { totalTestCases, testCasesPassed, failedTestIndex, status } =
       submission;
+
    const pending = isPending(status);
 
    return (
@@ -16,6 +17,7 @@ const TestSegments = ({ submission, gap = "" }) => {
 
             if (!pending && position <= testCasesPassed)
                tone = "result-seg-pass";
+
             if (!pending && position === failedTestIndex)
                tone = "result-seg-fail";
 

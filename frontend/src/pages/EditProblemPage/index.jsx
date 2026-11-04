@@ -45,6 +45,7 @@ const EditProblemPage = () => {
    useEffect(() => {
       if (renamedTo.current === slug) {
          renamedTo.current = null;
+
          return undefined;
       }
 
@@ -143,6 +144,7 @@ const EditProblemPage = () => {
                The problem and all of its test cases are removed. There is no
                undo.
             </div>
+
             <div className="dialog-actions">
                <button
                   type="button"
@@ -151,6 +153,7 @@ const EditProblemPage = () => {
                >
                   Keep it
                </button>
+
                <button
                   type="button"
                   className="btn btn-primary"
@@ -200,6 +203,7 @@ const EditProblemPage = () => {
             onToggle={() => save({ isPublished: !published })}
             disabled={busy}
          />
+
          <SaveNotice message={message} errors={errors} />
 
          <ProblemForm draft={draft} onChange={set} errors={errors} />
@@ -213,6 +217,7 @@ const EditProblemPage = () => {
                >
                   Delete problem
                </button>
+
                <span>Only a draft can be deleted.</span>
             </div>
          )}
@@ -228,6 +233,7 @@ const EditProblemPage = () => {
          <p className="cj-prose">
             It does not exist, or it belongs to another setter.
          </p>
+
          <Link className="btn btn-primary" to="/setter/problems">
             Back to your problems
          </Link>

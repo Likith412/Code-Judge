@@ -1,0 +1,336 @@
+.contest-back {
+   display: inline-block;
+   margin-bottom: 16px;
+   font-size: 14px;
+}
+
+/* ---- the header: the one dark block on the page --------------------- */
+
+.contest-hero {
+   display: flex;
+   align-items: flex-end;
+   justify-content: space-between;
+   gap: 24px;
+   flex-wrap: wrap;
+   padding: 28px 32px;
+   background: var(--color-text);
+   color: var(--color-bg);
+}
+
+.contest-hero-main {
+   min-width: 0;
+}
+
+.contest-hero-title {
+   margin: 12px 0 6px;
+   font-size: 38px;
+   line-height: 1.1;
+   color: var(--color-bg);
+   overflow-wrap: anywhere;
+}
+
+.contest-hero-when {
+   font-size: 14px;
+   color: var(--color-neutral-400);
+   font-variant-numeric: tabular-nums;
+}
+
+/* The timer was drawn for a light page, so it is recoloured here. */
+.contest-hero .contest-timer-label {
+   color: var(--color-neutral-400);
+}
+
+.contest-hero .contest-timer-value {
+   font-size: 44px;
+   color: var(--color-bg);
+}
+
+.contest-hero .contest-timer-warn .contest-timer-value,
+.contest-hero .contest-timer-warn .contest-timer-label {
+   color: var(--color-accent-500);
+}
+
+.contest-hero .contest-timer-ended .contest-timer-label {
+   font-size: 14px;
+   color: var(--color-neutral-400);
+}
+
+/* The state as a plain word: red when live, grey otherwise. No box, no motion. */
+.contest-pill {
+   font-size: 12px;
+   font-weight: 700;
+   letter-spacing: 0.14em;
+   text-transform: uppercase;
+   color: var(--color-neutral-400);
+}
+
+.contest-pill-live {
+   color: var(--color-accent-500);
+}
+
+/* ---- the two columns ------------------------------------------------- */
+
+/* Content on the left; the join card above the details on the right. */
+.contest-layout {
+   display: grid;
+   grid-template-columns: minmax(0, 1fr) 300px;
+   grid-template-rows: auto 1fr;
+   grid-template-areas:
+      "content join"
+      "content info";
+   gap: 16px 40px;
+   align-items: start;
+   margin-top: 32px;
+}
+
+.contest-content {
+   grid-area: content;
+}
+
+.contest-side-join {
+   grid-area: join;
+}
+
+.contest-side-info {
+   grid-area: info;
+}
+
+.contest-side-join:empty {
+   display: none;
+}
+
+.contest-description {
+   max-width: 70ch;
+   margin-bottom: 32px;
+   font-size: 15px;
+   line-height: 1.65;
+}
+
+.contest-description > :first-child {
+   margin-top: 0;
+}
+
+.contest-description > :last-child {
+   margin-bottom: 0;
+}
+
+.contest-section + .contest-section {
+   margin-top: 40px;
+}
+
+.contest-section-head {
+   display: flex;
+   align-items: baseline;
+   justify-content: space-between;
+   gap: 12px;
+   flex-wrap: wrap;
+   font-size: 13px;
+}
+
+.contest-section-title {
+   margin: 0 0 12px;
+   font-size: 22px;
+}
+
+/* ---- problems: the same columns and type as the main problem list -- */
+
+.contest-problems-head,
+.contest-problem {
+   display: grid;
+   grid-template-columns: 22px 24px minmax(0, 1fr) 100px 70px;
+   gap: 0 12px;
+   align-items: center;
+}
+
+.contest-problems-head {
+   padding: 8px 0;
+   border-top: 2px solid var(--color-divider);
+   border-bottom: 2px solid var(--color-divider);
+   font-size: 11px;
+   letter-spacing: 0.08em;
+   text-transform: uppercase;
+   color: var(--color-neutral-700);
+}
+
+.contest-problem {
+   padding: 11px 0;
+   border-bottom: 1px solid var(--color-divider);
+   font-size: 14px;
+   color: var(--color-text);
+   text-decoration: none;
+}
+
+/* Colour restated, or the global a:hover paints the whole row accent. */
+.contest-problem:hover {
+   background: rgba(32, 30, 29, 0.04);
+   color: var(--color-text);
+}
+
+.contest-problem-tick {
+   display: flex;
+   align-items: center;
+   height: 16px;
+   color: var(--color-text);
+}
+
+.contest-problem-letter {
+   font-weight: 700;
+   color: var(--color-neutral-700);
+}
+
+.contest-problem-title {
+   min-width: 0;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+   font-weight: 600;
+}
+
+.contest-problem-points {
+   text-align: right;
+   font-variant-numeric: tabular-nums;
+}
+
+/* Before the start and after the end there is nothing to list. */
+.contest-locked {
+   padding: 28px 24px;
+   border: 1px dashed var(--color-neutral-400);
+   text-align: center;
+}
+
+.contest-locked-title {
+   margin-bottom: 4px;
+   font-family: var(--font-heading);
+   font-size: 17px;
+   font-weight: 800;
+}
+
+.contest-locked p {
+   margin: 0;
+   font-size: 14px;
+   color: var(--color-neutral-700);
+}
+
+/* ---- the sidebar ------------------------------------------------------ */
+
+.contest-side {
+   display: flex;
+   flex-direction: column;
+   gap: 16px;
+}
+
+.contest-card {
+   padding: 18px;
+   border: 1px solid var(--color-divider);
+}
+
+.contest-card-title {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   margin-bottom: 8px;
+   font-family: var(--font-heading);
+   font-size: 15px;
+   font-weight: 800;
+}
+
+.contest-card-text {
+   margin: 0 0 14px;
+   font-size: 14px;
+   line-height: 1.5;
+   color: var(--color-neutral-800);
+}
+
+.contest-card-text:last-child {
+   margin-bottom: 0;
+}
+
+/* btn-block is made for menus, so it is centred again here. */
+.contest-card .btn-block {
+   justify-content: center;
+   margin-top: 0;
+}
+
+.contest-card-joined {
+   border-color: var(--color-success-700);
+   background: var(--color-success-100);
+}
+
+.contest-card-joined .contest-card-title {
+   color: var(--color-success-800);
+}
+
+.contest-details {
+   margin: 0;
+}
+
+.contest-details-row {
+   display: flex;
+   justify-content: space-between;
+   gap: 12px;
+   padding: 8px 0;
+   border-top: 1px solid var(--color-neutral-300);
+   font-size: 13px;
+}
+
+.contest-details-row dt {
+   color: var(--color-neutral-700);
+}
+
+.contest-details-row dd {
+   margin: 0;
+   text-align: right;
+   font-weight: 600;
+   font-variant-numeric: tabular-nums;
+}
+
+.contest-rules {
+   margin: 0;
+   padding-left: 18px;
+   font-size: 13px;
+   line-height: 1.5;
+   color: var(--color-neutral-800);
+}
+
+.contest-rules li + li {
+   margin-top: 6px;
+}
+
+/* ---- narrower screens ------------------------------------------------- */
+
+/* One column: joining first, then the problems, the details last. */
+@media (max-width: 900px) {
+   .contest-layout {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: none;
+      grid-template-areas:
+         "join"
+         "content"
+         "info";
+      gap: 24px;
+   }
+}
+
+@media (max-width: 640px) {
+   .contest-hero {
+      padding: 20px;
+   }
+
+   .contest-hero-title {
+      font-size: 28px;
+   }
+
+   .contest-hero .contest-timer {
+      align-items: flex-start;
+   }
+
+   .contest-hero .contest-timer-value {
+      font-size: 34px;
+   }
+
+   .contest-problems-head,
+   .contest-problem {
+      grid-template-columns: 18px 20px minmax(0, 1fr) 84px 50px;
+      gap: 0 8px;
+   }
+}

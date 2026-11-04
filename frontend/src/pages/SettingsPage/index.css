@@ -43,8 +43,7 @@
    max-width: 460px;
 }
 
-/* A value that is shown rather than edited. Same height as an input, so a
-   read-only row sits on the same rhythm as an editable one. */
+/* A read-only value, the same height as an input so the rows line up. */
 .settings-static {
    display: flex;
    align-items: center;

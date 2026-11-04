@@ -92,8 +92,7 @@ h6 {
    letter-spacing: -0.015em;
 }
 
-/* The app never uses this 42px h1 — see App.css for the sizes the screens
-   actually use. */
+/* Never used as is: App.css sets the h1 sizes the screens use. */
 h1 {
    font-size: 42px;
 }
@@ -143,8 +142,7 @@ a:hover {
    color: var(--color-neutral-700);
 }
 
-/* Hides the focus ring for mouse clicks but keeps it for the keyboard. Do not
-   remove: it is how anyone navigating by Tab can see where they are. */
+/* No focus ring on click, but kept for the keyboard. Do not remove. */
 :focus {
    outline: none;
 }
@@ -163,6 +161,7 @@ a:hover {
    0% {
       background-position: 100% 0;
    }
+
    100% {
       background-position: -100% 0;
    }
@@ -177,11 +176,7 @@ a:hover {
    background: var(--color-divider);
 }
 
-/* ---- buttons -------------------------------------------------------
-   Each :hover below restates its colour. That is not decoration: the `a:hover`
-   rule near the top recolours every link on the page, and a link styled as a
-   button would have its label repainted — accent on accent for a primary
-   button, which makes the word disappear. */
+/* ---- buttons: each :hover restates its colour, or a:hover repaints link buttons */
 
 .btn {
    display: inline-flex;
@@ -297,8 +292,7 @@ textarea.input {
    resize: vertical;
 }
 
-/* A row of buttons joined into one control, for difficulty and comparison
-   mode. The buttons inside carry their own selected styling. */
+/* Buttons joined into one control, for difficulty and comparison mode. */
 .seg {
    display: inline-flex;
    overflow: hidden;

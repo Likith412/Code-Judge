@@ -41,13 +41,12 @@ const ForgotPasswordPage = () => {
 
          <Notice>{problem}</Notice>
 
-         {/* The same indefinite wording as registering, for the same reason:
-             this form must not become a way to find out who has an account. */}
+         {/* Vague on purpose, so this form cannot reveal who has an account. */}
          {sent ? (
             <>
                <p className="cj-prose">
-                  If <strong>{email}</strong> has an account, a reset link is on its way. It
-                  works for 30 minutes.
+                  If <strong>{email}</strong> has an account, a reset link is on
+                  its way. It works for 30 minutes.
                </p>
 
                <div className="forgot-resend">

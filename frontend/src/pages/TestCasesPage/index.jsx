@@ -85,6 +85,7 @@ const TestCasesPage = () => {
             // Same problem, new slug: keep the rows.
             if (found.id === loadedId.current) {
                if (!cancelled) setProblem(found);
+
                return;
             }
 
@@ -193,6 +194,7 @@ const TestCasesPage = () => {
 
       if (!row.id) {
          setRows((current) => current.filter((one) => one.key !== row.key));
+
          return;
       }
 
@@ -286,6 +288,7 @@ const TestCasesPage = () => {
                         <span className="cases-unsaved">
                            {row.id ? "Unsaved changes" : "Not saved yet"}
                         </span>
+
                         <button
                            type="button"
                            className="btn btn-primary"
@@ -310,6 +313,7 @@ const TestCasesPage = () => {
                It is removed for good. Submissions already judged keep their
                verdicts.
             </div>
+
             <div className="dialog-actions">
                <button
                   type="button"
@@ -318,6 +322,7 @@ const TestCasesPage = () => {
                >
                   Keep it
                </button>
+
                <button
                   type="button"
                   className="btn btn-primary"
@@ -392,6 +397,7 @@ const TestCasesPage = () => {
          <p className="cj-prose">
             It does not exist, or it belongs to another setter.
          </p>
+
          <Link className="btn btn-primary" to="/setter/problems">
             Back to your problems
          </Link>

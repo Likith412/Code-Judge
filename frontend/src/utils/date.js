@@ -23,4 +23,16 @@ function formatWhen(isoDate) {
    return dateFormatter.format(date);
 }
 
-export { formatWhen };
+// "19 Oct, 14:03:22", for a log where the exact moment matters.
+const momentFormatter = new Intl.DateTimeFormat("en-GB", {
+   day: "numeric",
+   month: "short",
+   hour: "2-digit",
+   minute: "2-digit",
+   second: "2-digit",
+});
+
+const formatMoment = (isoDate) =>
+   isoDate ? momentFormatter.format(new Date(isoDate)) : "";
+
+export { formatWhen, formatMoment };

@@ -6,6 +6,7 @@ import { apiError } from "../../services/api/client";
 import DifficultyTag from "../../components/DifficultyTag";
 import FailureView from "../../components/FailureView";
 import UserContext from "../../context/UserContext";
+import { homePath } from "../../utils/home";
 import { LANG_LABEL } from "../../utils/languages";
 
 import "./index.css";
@@ -87,6 +88,7 @@ const ProfilePage = () => {
                <div className="profile-stat-number">
                   {stats.totalSubmissions}
                </div>
+
                <div className="profile-stat-note">
                   {stats.acceptedSubmissions} accepted · {rateText(stats)}
                </div>
@@ -142,8 +144,21 @@ const ProfilePage = () => {
       );
    };
 
+   // Setters and admins cannot submit, so their own page skips the solver stats.
+   const renderStaffNote = () => (
+      <p className="profile-none profile-staff-note">
+         {me.role === "ADMIN" ? "Admins" : "Setters"} do not solve problems, so
+         there are no stats here.{" "}
+         <Link to={homePath(me)}>
+            {me.role === "ADMIN" ? "Go to Users →" : "Go to Problems →"}
+         </Link>
+      </p>
+   );
+
    const renderProfile = () => {
       const name = profile.displayName || profile.username;
+      const isStaffSelf =
+         me?.username === profile.username && me.role !== "USER";
 
       return (
          <main className="cj-main-profile">
@@ -158,14 +173,21 @@ const ProfilePage = () => {
                      @{profile.username} · Joined{" "}
                      {joinedFormatter.format(new Date(profile.createdAt))}
                   </div>
+
                   {profile.bio && <p className="profile-bio">{profile.bio}</p>}
                </div>
             </header>
 
-            {renderStats(profile.stats)}
+            {isStaffSelf ? (
+               renderStaffNote()
+            ) : (
+               <>
+                  {renderStats(profile.stats)}
 
-            <h6 className="profile-section">Solved problems</h6>
-            {renderSolved()}
+                  <h6 className="profile-section">Solved problems</h6>
+                  {renderSolved()}
+               </>
+            )}
          </main>
       );
    };

@@ -51,6 +51,7 @@ const ProblemForm = ({ draft, onChange, errors, isNew }) => {
       if (next.length === 0) return;
 
       set({ supportedLanguages: next });
+
       if (!next.includes(starterTab)) setStarterTab(next[0]);
       if (!has) setStarterTab(language);
    };
@@ -86,6 +87,7 @@ const ProblemForm = ({ draft, onChange, errors, isNew }) => {
                   value={draft.title}
                   onChange={(event) => set({ title: event.target.value })}
                />
+
                {renderFieldError("title")}
             </div>
 
@@ -98,6 +100,7 @@ const ProblemForm = ({ draft, onChange, errors, isNew }) => {
                   placeholder={isNew ? "made from the title" : ""}
                   onChange={(event) => set({ slug: event.target.value })}
                />
+
                {renderFieldError("slug")}
             </div>
          </div>
@@ -119,6 +122,7 @@ const ProblemForm = ({ draft, onChange, errors, isNew }) => {
                value={draft.description}
                onChange={(event) => set({ description: event.target.value })}
             />
+
             {renderFieldError("description")}
          </div>
 
@@ -144,6 +148,7 @@ const ProblemForm = ({ draft, onChange, errors, isNew }) => {
                placeholder="array, two-pointers"
                onChange={(event) => set({ tagsText: event.target.value })}
             />
+
             {renderFieldError("tags")}
          </div>
 
@@ -157,6 +162,7 @@ const ProblemForm = ({ draft, onChange, errors, isNew }) => {
                   value={draft.timeLimitMs}
                   onChange={(event) => set({ timeLimitMs: event.target.value })}
                />
+
                {renderFieldError("timeLimitMs")}
             </div>
 
@@ -171,6 +177,7 @@ const ProblemForm = ({ draft, onChange, errors, isNew }) => {
                      set({ memoryLimitMb: event.target.value })
                   }
                />
+
                {renderFieldError("memoryLimitMb")}
             </div>
 
@@ -198,6 +205,7 @@ const ProblemForm = ({ draft, onChange, errors, isNew }) => {
                         setListItem("constraints", index, event.target.value)
                      }
                   />
+
                   <button
                      type="button"
                      className="btn btn-icon btn-secondary"
@@ -255,12 +263,14 @@ const ProblemForm = ({ draft, onChange, errors, isNew }) => {
                         placeholder="Input (stdin)"
                         onChange={change("input")}
                      />
+
                      <textarea
                         className="input editor-mono editor-example-box"
                         value={example.output}
                         placeholder="Expected output"
                         onChange={change("output")}
                      />
+
                      <input
                         className="input editor-example-note"
                         value={example.explanation}
@@ -314,6 +324,7 @@ const ProblemForm = ({ draft, onChange, errors, isNew }) => {
                   </button>
                ))}
             </div>
+
             {renderFieldError("supportedLanguages")}
          </div>
 

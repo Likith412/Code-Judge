@@ -65,6 +65,7 @@ const SubmissionsPage = () => {
 
    const page = Number(searchParams.get("page")) || 1;
    const problemId = searchParams.get("problem") || "";
+   const contestId = searchParams.get("contest") || "";
    const language = searchParams.get("language") || "";
    const status = searchParams.get("status") || "";
 
@@ -84,6 +85,7 @@ const SubmissionsPage = () => {
             const data = await listMySubmissions({
                page,
                problemId,
+               contestId,
                language,
                status,
                limit: PAGE_SIZE,
@@ -106,12 +108,13 @@ const SubmissionsPage = () => {
       return () => {
          cancelled = true;
       };
-   }, [page, problemId, language, status, reloadCount]);
+   }, [page, problemId, contestId, language, status, reloadCount]);
 
    // Back to page one unless the change names a page. Empty values stay off the url.
    const setParams = (changes) => {
       const next = {
          problem: problemId,
+         contest: contestId,
          language,
          status,
          page: 1,
@@ -128,7 +131,16 @@ const SubmissionsPage = () => {
       );
    };
 
-   const filtered = Boolean(problemId || language || status);
+   const filtered = Boolean(problemId || contestId || language || status);
+
+   // Only the contests you took part in, so the row is absent for most people.
+   const contestFilters = [
+      { value: "", label: "All" },
+      ...(result?.contests || []).map((contest) => ({
+         value: String(contest.id),
+         label: contest.title,
+      })),
+   ];
 
    const problemFilters = [
       { value: "", label: "All problems" },
@@ -182,6 +194,7 @@ const SubmissionsPage = () => {
          <span className="subs-title">
             {row.problem?.title || "Deleted problem"}
          </span>
+
          <span>{LANG_LABEL[row.language] || row.language}</span>
          <span>
             <VerdictTag status={row.status} />
@@ -257,12 +270,23 @@ const SubmissionsPage = () => {
                value={problemId}
                onPick={(value) => setParams({ problem: value })}
             />
+
+            {contestFilters.length > 1 && (
+               <ChipRow
+                  label="Contest"
+                  options={contestFilters}
+                  value={contestId}
+                  onPick={(value) => setParams({ contest: value })}
+               />
+            )}
+
             <ChipRow
                label="Language"
                options={languageFilters}
                value={language}
                onPick={(value) => setParams({ language: value })}
             />
+
             <ChipRow
                label="Verdict"
                options={verdictFilters}

@@ -17,8 +17,7 @@ const CheckEmailPage = () => {
       <main className="cj-main-narrow">
          <h1 className="cj-form-title">Check your email</h1>
 
-         {/* Not "account created" — the server answers the same way whether or
-             not that address was free, so this page cannot claim otherwise. */}
+         {/* Not "account created": the server answers the same either way. */}
          <p className="cj-prose">
             If <strong>{known || "that address"}</strong> is new here, a
             confirmation link is on its way. Open it within 24 hours to finish.

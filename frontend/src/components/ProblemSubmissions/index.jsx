@@ -12,8 +12,8 @@ import "./index.css";
 // The newest this many. Older ones are on the Submissions page.
 const LIMIT = 50;
 
-// Your submissions to one problem. refreshKey changes when a new one lands.
-const ProblemSubmissions = ({ problemId, refreshKey }) => {
+// Your submissions to one problem, optionally in one contest; refreshKey reloads it.
+const ProblemSubmissions = ({ problemId, contestId, refreshKey }) => {
    const [result, setResult] = useState(null);
    const [failure, setFailure] = useState("");
 
@@ -22,7 +22,11 @@ const ProblemSubmissions = ({ problemId, refreshKey }) => {
 
       const load = async () => {
          try {
-            const data = await listMySubmissions({ problemId, limit: LIMIT });
+            const data = await listMySubmissions({
+               problemId,
+               contestId,
+               limit: LIMIT,
+            });
 
             if (cancelled) return;
 
@@ -38,7 +42,7 @@ const ProblemSubmissions = ({ problemId, refreshKey }) => {
       return () => {
          cancelled = true;
       };
-   }, [problemId, refreshKey]);
+   }, [problemId, contestId, refreshKey]);
 
    if (failure) return <p className="psubs-note">{failure}</p>;
    if (!result) return <p className="psubs-note">Loading…</p>;
@@ -46,8 +50,10 @@ const ProblemSubmissions = ({ problemId, refreshKey }) => {
    if (result.submissions.length === 0) {
       return (
          <p className="psubs-note">
-            No submissions to this problem yet. Submit is the button under the
-            editor.
+            {contestId
+               ? "No submissions to this problem in this contest yet."
+               : "No submissions to this problem yet."}{" "}
+            Submit is the button under the editor.
          </p>
       );
    }
@@ -70,12 +76,16 @@ const ProblemSubmissions = ({ problemId, refreshKey }) => {
                <span>
                   <VerdictTag status={row.status} />
                </span>
+
                <span>{LANG_LABEL[row.language] || row.language}</span>
             </Link>
          ))}
 
          {result.total > LIMIT && (
-            <Link className="psubs-all" to={`/submissions?problem=${problemId}`}>
+            <Link
+               className="psubs-all"
+               to={`/submissions?problem=${problemId}${contestId ? `&contest=${contestId}` : ""}`}
+            >
                All {result.total} submissions →
             </Link>
          )}

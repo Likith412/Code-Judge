@@ -18,6 +18,7 @@ const statusTone = (status) => {
    if (isPending(status)) return "pending";
    if (status === "ACCEPTED") return "accepted";
    if (status === "SYSTEM_ERROR") return "system";
+
    return "failed";
 };
 

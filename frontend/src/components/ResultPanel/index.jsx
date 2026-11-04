@@ -18,19 +18,24 @@ const ResultPanel = (props) => {
       sending,
       onRun,
       onSubmit,
+      contestOpen = true,
    } = props;
 
    const submission = attempt?.submission;
    const pending = Boolean(submission) && isPending(submission.status);
    const runnable = RUNNABLE.includes(language);
-   const canPress = signedIn && solves && runnable && !sending && !pending;
+   const canPress =
+      signedIn && solves && runnable && contestOpen && !sending && !pending;
 
    const gate = () => {
       if (!signedIn) return "Running code needs an account.";
       if (!solves) return "Setters and admins cannot run or submit.";
+
       if (!runnable)
          return `${LANG_LABEL[language] || language} cannot run yet. Switch to Java.`;
+
       if (sending || pending) return "";
+
       return "Run isn’t saved. Submit is.";
    };
 
@@ -116,6 +121,7 @@ const ResultPanel = (props) => {
                               label="Expected"
                               text={row.expectedOutput}
                            />
+
                            <OutputBox
                               label="Your output"
                               text={row.actualOutput}
@@ -212,11 +218,13 @@ const ResultPanel = (props) => {
    const renderBody = () => {
       if (attempt?.error)
          return <p className="result-text result-fail-text">{attempt.error}</p>;
+
       if (!submission) return renderIdle();
       if (pending) return renderPending();
       if (submission.isSampleRun) return renderSampleRun();
       if (submission.status === "ACCEPTED") return renderAccepted();
       if (submission.status === "SYSTEM_ERROR") return renderSystem();
+
       return renderFailed();
    };
 

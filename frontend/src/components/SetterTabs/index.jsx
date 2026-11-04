@@ -2,8 +2,7 @@ import { Link } from "react-router-dom";
 
 import "./index.css";
 
-// Problem editor | Test cases, as ?tab= on one url. A new problem has no
-// test cases tab yet.
+// Problem editor | Test cases as ?tab= on one url; a new problem has only the editor.
 const SetterTabs = ({ slug, active }) => {
    const tabs = [
       {

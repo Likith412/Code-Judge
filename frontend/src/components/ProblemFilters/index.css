@@ -49,7 +49,6 @@
    color: var(--color-neutral-400);
 }
 
-
 /* Sits under its group, like a note would. */
 .problems-mine {
    margin-top: var(--space-2);

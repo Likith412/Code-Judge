@@ -1,0 +1,133 @@
+.audit-tools {
+   display: flex;
+   align-items: center;
+   flex-wrap: wrap;
+   gap: 12px;
+   margin-bottom: 16px;
+}
+
+.audit-select {
+   width: 260px;
+}
+
+.audit-filter {
+   display: inline-flex;
+   align-items: center;
+   gap: 6px;
+   font-size: 14px;
+}
+
+.audit-hint {
+   font-size: 13px;
+}
+
+/* The same five columns for the head and every row. */
+.audit-head,
+.audit-row {
+   display: grid;
+   grid-template-columns: 150px 210px 150px minmax(0, 1fr) 130px;
+   gap: 4px 16px;
+   align-items: baseline;
+}
+
+.audit-head {
+   padding: 8px 0;
+   border-bottom: 2px solid var(--color-divider);
+   font-size: 11px;
+   letter-spacing: 0.08em;
+   text-transform: uppercase;
+   color: var(--color-neutral-700);
+}
+
+.audit-row {
+   padding: 10px 0;
+   border-bottom: 1px solid var(--color-divider);
+   font-size: 14px;
+}
+
+.audit-time,
+.audit-ip {
+   font-size: 13px;
+   font-variant-numeric: tabular-nums;
+}
+
+.audit-action {
+   font-weight: 600;
+}
+
+.audit-actor,
+.audit-target,
+.audit-ip {
+   min-width: 0;
+   overflow-wrap: anywhere;
+}
+
+/* A name that filters the log. Looks like a link, is a button. */
+.audit-link {
+   padding: 0;
+   border: 0;
+   background: none;
+   font: inherit;
+   color: var(--color-accent);
+   cursor: pointer;
+}
+
+.audit-link:hover {
+   text-decoration: underline;
+}
+
+/* Details open under the row, across every column. */
+.audit-details {
+   grid-column: 1 / -1;
+   font-size: 13px;
+}
+
+.audit-details summary {
+   width: max-content;
+   color: var(--color-neutral-700);
+   cursor: pointer;
+}
+
+.audit-meta {
+   overflow: auto;
+   max-height: 240px;
+   margin: 8px 0 0;
+   padding: 12px;
+   background: var(--color-surface);
+}
+
+.audit-empty {
+   padding: 24px 0;
+}
+
+/* Target and IP drop out on narrow screens. */
+@media (max-width: 900px) {
+   .audit-head,
+   .audit-row {
+      grid-template-columns: 130px minmax(0, 1fr) 140px;
+   }
+
+   .audit-target,
+   .audit-ip {
+      display: none;
+   }
+}
+
+@media (max-width: 640px) {
+   .audit-head {
+      display: none;
+   }
+
+   .audit-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+   }
+
+   .audit-time {
+      grid-column: 1 / -1;
+      color: var(--color-neutral-700);
+   }
+
+   .audit-select {
+      width: 100%;
+   }
+}

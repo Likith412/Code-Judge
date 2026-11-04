@@ -69,6 +69,22 @@
    color: var(--color-text);
 }
 
+/* The same outlined tag as a difficulty. Admin is red, setter is grey. */
+.cj-me-role {
+   padding: 1px 6px;
+   border: 1px solid var(--color-neutral-500);
+   font-size: 10px;
+   font-weight: 600;
+   letter-spacing: 0.08em;
+   text-transform: uppercase;
+   color: var(--color-neutral-800);
+}
+
+.cj-me-role-admin {
+   border-color: var(--color-accent-700);
+   color: var(--color-accent-700);
+}
+
 .cj-avatar {
    display: inline-grid;
    place-items: center;

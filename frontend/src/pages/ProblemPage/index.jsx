@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import Markdown from "react-markdown";
 
 import { getProblem } from "../../services/api/problems";
+import { getContestProblem } from "../../services/api/contests";
 import {
    createSubmission,
    getSubmission,
@@ -13,6 +14,7 @@ import DifficultyTag from "../../components/DifficultyTag";
 import CopyButton from "../../components/CopyButton";
 import FailureView from "../../components/FailureView";
 import CodeEditor from "../../components/CodeEditor";
+import ContestTimer from "../../components/ContestTimer";
 import { CheckIcon } from "../../components/Icons";
 import ProblemSubmissions from "../../components/ProblemSubmissions";
 import ResultPanel from "../../components/ResultPanel";
@@ -46,7 +48,7 @@ const mobileTabs = [
 ];
 
 const ProblemPage = () => {
-   const { slug } = useParams();
+   const { slug, contestSlug } = useParams();
 
    const { user } = useContext(UserContext);
 
@@ -72,6 +74,18 @@ const ProblemPage = () => {
    // The latest Run or Submit: { submission } or { error }.
    const [attempt, setAttempt] = useState(null);
    const [sending, setSending] = useState(false);
+   const [now, setNow] = useState(Date.now);
+
+   // Server time minus local time, so the contest window uses the server's clock.
+   const [offset, setOffset] = useState(0);
+
+   useEffect(() => {
+      if (!contestSlug) return undefined;
+
+      const timer = setInterval(() => setNow(Date.now() + offset), 1000);
+
+      return () => clearInterval(timer);
+   }, [contestSlug, offset]);
 
    // The problem on screen, for replies that arrive late.
    const shownProblem = useRef(null);
@@ -165,11 +179,17 @@ const ProblemPage = () => {
          setApiStatus(apiStatusConstants.inProgress);
 
          try {
-            const data = await getProblem(slug);
+            const data = contestSlug
+               ? await getContestProblem(contestSlug, slug)
+               : await getProblem(slug);
 
             if (cancelled) return;
 
             setProblem(data.problem);
+
+            if (data.serverTime) {
+               setOffset(new Date(data.serverTime).getTime() - Date.now());
+            }
             setApiStatus(apiStatusConstants.success);
          } catch (error) {
             if (cancelled) return;
@@ -184,7 +204,7 @@ const ProblemPage = () => {
       return () => {
          cancelled = true;
       };
-   }, [slug, reloadCount]);
+   }, [slug, contestSlug, reloadCount, user?.id]);
 
    // A new problem resets the language and anything typed, during render.
    if (problem && problem.slug !== syncedSlug) {
@@ -228,6 +248,7 @@ const ProblemPage = () => {
       try {
          const data = await createSubmission({
             problemId: problem.id,
+            ...(problem.contestId ? { contestId: problem.contestId } : {}),
             language,
             sourceCode: code,
             isSampleRun,
@@ -248,6 +269,21 @@ const ProblemPage = () => {
 
    const renderHead = () => (
       <div className="problem-head">
+         {problem.contestSlug && (
+            <div className="problem-contest-line">
+               <Link to={`/contests/${problem.contestSlug}`}>
+                  ← {problem.contestTitle}
+               </Link>
+
+               <ContestTimer
+                  startTime={problem.contestStartTime}
+                  endTime={problem.contestEndTime}
+                  offset={offset}
+                  compact
+               />
+            </div>
+         )}
+
          <div className="problem-head-line">
             <h1 className="problem-title">{problem.title}</h1>
 
@@ -330,6 +366,7 @@ const ProblemPage = () => {
       return (
          <ProblemSubmissions
             problemId={problem.id}
+            contestId={problem.contestId}
             refreshKey={finished ? finished.id : ""}
          />
       );
@@ -405,10 +442,23 @@ const ProblemPage = () => {
       </section>
    );
 
+   const contestOpen =
+      !problem?.contestId ||
+      (problem.contestJoined &&
+         now >= new Date(problem.contestStartTime).getTime() &&
+         now < new Date(problem.contestEndTime).getTime());
+
    const renderGate = () =>
-      !solves && (
+      (!solves || !contestOpen) && (
          <div className="problem-gate">
-            {user ? (
+            {solves && !contestOpen ? (
+               <span>
+                  Join while the contest is open to submit.{" "}
+                  <Link to={`/contests/${problem.contestSlug}`}>
+                     Open contest
+                  </Link>
+               </span>
+            ) : user ? (
                "Setters and admins do not run or submit code, so the editor is read only."
             ) : (
                <span>
@@ -448,6 +498,7 @@ const ProblemPage = () => {
             signedIn={Boolean(user)}
             attempt={attempt}
             sending={sending}
+            contestOpen={contestOpen}
             onRun={() => send(true)}
             onSubmit={() => send(false)}
          />
@@ -471,6 +522,7 @@ const ProblemPage = () => {
                onKeyDown={(event) => {
                   if (event.key === "ArrowUp")
                      setResultH((height) => Math.min(RESULT.max, height + 10));
+
                   if (event.key === "ArrowDown")
                      setResultH((height) => Math.max(RESULT.min, height - 10));
                }}
@@ -483,10 +535,12 @@ const ProblemPage = () => {
                   if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
                      return;
                   }
+
                   const startY = Number(event.currentTarget.dataset.startY);
                   const startHeight = Number(
                      event.currentTarget.dataset.startHeight,
                   );
+
                   const next = Math.min(
                      RESULT.max,
                      Math.max(
@@ -499,6 +553,7 @@ const ProblemPage = () => {
             >
                <span className="problem-grip" />
             </div>
+
             {renderResult()}
          </div>
       </section>
@@ -602,6 +657,7 @@ const ProblemPage = () => {
                   onKeyDown={(event) => {
                      if (event.key === "ArrowLeft")
                         setSplit((value) => Math.max(SPLIT.min, value - 2));
+
                      if (event.key === "ArrowRight")
                         setSplit((value) => Math.min(SPLIT.max, value + 2));
                   }}
@@ -617,9 +673,11 @@ const ProblemPage = () => {
                         !event.currentTarget.hasPointerCapture(event.pointerId)
                      )
                         return;
+
                      const dx =
                         event.clientX -
                         Number(event.currentTarget.dataset.startX);
+
                      const width = Number(event.currentTarget.dataset.width);
                      const start = Number(
                         event.currentTarget.dataset.startSplit,
@@ -641,6 +699,30 @@ const ProblemPage = () => {
       );
    };
 
+   // Contest closed, or (finished) ended early by this person. Admins still preview.
+   const renderClosed = (finished = false) => (
+      <main className="cj-main-narrow">
+         <h1 className="cj-screen-title">
+            {finished ? "You ended this contest" : "This contest has ended"}
+         </h1>
+
+         <p className="cj-prose">
+            {finished
+               ? "Its problems are closed for you. Your score so far stays in the standings, and your code is kept in My submissions."
+               : "Its questions are open only while the contest runs. Your code is kept in My submissions."}
+         </p>
+
+         <Link className="btn btn-primary" to={`/contests/${contestSlug}`}>
+            See the rankings
+         </Link>
+      </main>
+   );
+
+   const contestOver =
+      Boolean(problem?.contestId) &&
+      user?.role !== "ADMIN" &&
+      now >= new Date(problem.contestEndTime).getTime();
+
    const renderMissing = () => (
       <main className="cj-main-narrow">
          <h1 className="cj-screen-title">No such problem</h1>
@@ -658,7 +740,10 @@ const ProblemPage = () => {
 
    // A draft or an unknown slug is a 404, which reads better than an error.
    const renderFailure = () =>
-      failure.status === 404 ? (
+      failure.code === "CONTEST_CLOSED" ||
+      failure.code === "CONTEST_FINISHED" ? (
+         renderClosed(failure.code === "CONTEST_FINISHED")
+      ) : failure.status === 404 ? (
          renderMissing()
       ) : (
          <FailureView
@@ -669,7 +754,7 @@ const ProblemPage = () => {
 
    switch (apiStatus) {
       case apiStatusConstants.success:
-         return renderSplit();
+         return contestOver ? renderClosed() : renderSplit();
       case apiStatusConstants.failure:
          return renderFailure();
       case apiStatusConstants.inProgress:

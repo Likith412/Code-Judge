@@ -22,8 +22,7 @@ const apiStatusConstants = {
    inProgress: "IN_PROGRESS",
 };
 
-// Read only: no cursor line, no minimap, no scrolling past the end.
-// Long lines wrap, so a phone shows the whole line.
+// Read only: no cursor line, minimap or overscroll; long lines wrap for phones.
 const VIEWER_OPTIONS = {
    readOnly: true,
    wordWrap: "on",
@@ -83,8 +82,8 @@ const SubmissionPage = () => {
       if (submission.status === "SYSTEM_ERROR") {
          return (
             <p className="sub-text">
-               This failed on our side, not yours. It doesn’t count against
-               you. Submit it again from the problem page.
+               This failed on our side, not yours. It doesn’t count against you.
+               Submit it again from the problem page.
             </p>
          );
       }
@@ -120,30 +119,28 @@ const SubmissionPage = () => {
    };
 
    const renderDetail = () => {
-      const { submission, problem, author } = data;
-
-      // An admin can open anyone's. Make it plain that this is not theirs.
-      const foreign = user && String(submission.userId) !== String(user.id);
+      const { submission, problem, contest } = data;
 
       return (
          <main className="cj-main">
-            <Link className="sub-back" to="/submissions">
-               ← Submissions
-            </Link>
-
-            {foreign && (
-               <div className="sub-foreign">
-                  <span className="sub-foreign-tag">Admin view</span>
-                  This is <strong>@{author?.username}</strong>’s code. Only they
-                  and admins can see it.
-               </div>
+            {/* Only a USER has a submissions list to go back to. */}
+            {user?.role !== "ADMIN" && (
+               <Link className="sub-back" to="/submissions">
+                  ← Submissions
+               </Link>
             )}
 
             <header className="sub-header">
                <div>
                   <h1 className="sub-title">
                      {problem ? (
-                        <Link to={`/problems/${problem.slug}`}>
+                        <Link
+                           to={
+                              contest
+                                 ? `/contests/${contest.slug}/problems/${problem.slug}`
+                                 : `/problems/${problem.slug}`
+                           }
+                        >
                            {problem.title}
                         </Link>
                      ) : (
@@ -203,9 +200,15 @@ const SubmissionPage = () => {
             It does not exist, or it belongs to someone else.
          </p>
 
-         <Link className="btn btn-primary" to="/submissions">
-            Back to submissions
-         </Link>
+         {user?.role === "ADMIN" ? (
+            <Link className="btn btn-primary" to="/admin/users">
+               Back to users
+            </Link>
+         ) : (
+            <Link className="btn btn-primary" to="/submissions">
+               Back to submissions
+            </Link>
+         )}
       </main>
    );
 
