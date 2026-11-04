@@ -21,6 +21,9 @@ app.use(requestId);
 
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 
+// Max-size test cases run to megabytes, so only their routes take big bodies.
+app.use("/api/problems/:id/test-cases", express.json({ limit: "8mb" }));
+
 app.use(express.json({ limit: "100kb" }));
 
 app.use(cookieParser());

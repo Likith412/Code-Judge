@@ -8,8 +8,8 @@ const {
    COMPARISON_MODES,
 } = require("../utils/constants");
 
-// Test case text is capped well under the 100kb body limit in app.js.
-const MAX_CASE_CHARS = 20_000;
+// Room for 2 * 10^5 numbers, under the 8mb test case body limit in app.js.
+const MAX_CASE_CHARS = 3_000_000;
 
 /* ---- the pieces a problem is made of --------------------------------- */
 
